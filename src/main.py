@@ -1,5 +1,6 @@
-def main():
-    print("Hello World.")
+# main.py
+from src.engine import GameEngine
 
 if __name__ == "__main__":
-    main()
+    game = GameEngine()
+    game.run()
