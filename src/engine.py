@@ -13,6 +13,7 @@ class GameEngine:
         self.mapa_atual = Mapa(self.settings.levels["fase_teste"])
         self.game_objects = self.mapa_atual.obstacles + [self.player]
         self.window = None
+        self.power_ups_ativos = []
         self.last_time = 0
 
     def init_window(self):
@@ -36,20 +37,61 @@ class GameEngine:
         self.player.update_physics(delta_time)
         self.player.no_chao = False
 
-        # Lógica de colisão e câmera
+
+        for p_up in self.power_ups_ativos[:]:
+
+            p_up.update(delta_time)
+
+
+            if self.player.check_collision(p_up):
+                self.player.tem_item = True
+
+                self.power_ups_ativos.remove(p_up)
+                if p_up in self.game_objects:
+                    self.game_objects.remove(p_up)
+                continue
+
+            if getattr(p_up, 'is_spawning', False) == False:
+                for obj in self.mapa_atual.obstacles:
+                    if p_up.check_collision(obj):
+
+                        if p_up.vel_y < 0 and p_up.centro_y > obj.centro_y:
+                            p_up.centro_y = obj.canto_sup_esq_y + (p_up.height / 2)
+                            p_up.vel_y = 0
+
         for obj in self.mapa_atual.obstacles:
             if self.player.check_collision(obj):
+
+
                 if self.player.vel_y <= 0 and self.player.centro_y > obj.centro_y:
                     self.player.centro_y = obj.canto_sup_esq_y + (self.player.height / 2)
                     self.player.vel_y = 0
                     self.player.no_chao = True
+
+
+                elif self.player.vel_y > 0 and self.player.centro_y < obj.centro_y:
+                    self.player.centro_y = obj.canto_inf_esq_y - (self.player.height / 2)
+                    self.player.vel_y = 0
+
+
+                    from src.entities.power_ups import blocoPowerUp
+                    if isinstance(obj, blocoPowerUp):
+                        novo_power_up = obj.baterPorBaixo()
+                        if novo_power_up:
+                            self.power_ups_ativos.append(novo_power_up)
+                            self.game_objects.append(novo_power_up)
+
+
                 elif self.player.vel_x > 0:
                     self.player.centro_x = obj.canto_inf_esq_x - (self.player.width / 2)
+
+
                 elif self.player.vel_x < 0:
                     self.player.centro_x = obj.canto_inf_dir_x + (self.player.width / 2)
 
         if self.player.centro_x > 0:
             self.camera_x = self.player.centro_x
+
 
     def render(self):
         glClearColor(0.5, 0.8, 0.9, 1.0)

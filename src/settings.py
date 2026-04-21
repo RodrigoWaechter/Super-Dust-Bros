@@ -17,9 +17,9 @@ class Settings:
         #mapa de teste
         self.levels = {
             "fase_teste": [
-                "                               CCCCCCCC                   ",
+                "                         P      CCCCCCCC             P    ",
                 "      CCCC                                                ",
-                "             T    T                       TTT             ",
+                "             T    T                       TTT     T      T",
                 "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
             ]
         }
