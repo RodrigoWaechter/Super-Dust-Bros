@@ -11,8 +11,20 @@ class Player(Personagem):
             settings=settings
         )
         self.vidas = settings.player_vidas
+        self.invulneravel_tempo = 0
+        self.direcao = 1
 
     def jump(self):
         if self.no_chao:
             self.vel_y = self.settings.jump_speed
             self.no_chao = False
+
+    def atirar(self):
+        direcao = self.direcao
+
+        offset = (self.width / 2) + 0.1
+        spawn_x = self.centro_x + (offset * direcao)
+        spawn_y = self.centro_y
+
+        from src.entities.projetil import Projetil
+        return Projetil(spawn_x, spawn_y, direcao)

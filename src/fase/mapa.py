@@ -1,10 +1,14 @@
 from src.entities.obstaculo import Obstaculo
 from src.entities.power_ups import blocoPowerUp
+from src.entities.inimigo import Inimigo
+from src.entities.inimigo_atirador import InimigoAtirador
 
 class Mapa:
-    def __init__(self, level_design):
+    def __init__(self, level_design, settings):
         self.obstacles = []
+        self.inimigos = []
         self.tile_size = 0.1
+        self.settings = settings
         self.load_from_design(level_design)
 
     def load_from_design(self, design):
@@ -25,3 +29,7 @@ class Mapa:
                 elif char == "P":
                     bloco = blocoPowerUp(x, y, self.tile_size, self.tile_size)
                     self.obstacles.append(bloco)
+                elif char == "I":
+                    self.inimigos.append(Inimigo(x, y, self.tile_size, self.tile_size, self.settings))
+                elif char == "S":
+                    self.inimigos.append(InimigoAtirador(x, y, self.tile_size, self.tile_size, self.settings))

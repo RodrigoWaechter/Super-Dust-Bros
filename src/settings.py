@@ -12,14 +12,18 @@ class Settings:
         self.player_start_y = -0.5
         self.player_width = 0.1
         self.player_height = 0.15
-        self.player_vidas = 3
+        self.player_vidas = 100
 
         #mapa de teste
         self.levels = {
             "fase_teste": [
-                "                         P      CCCCCCCC             P    ",
-                "      CCCC                                                ",
-                "             T    T                       TTT     T      T",
-                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+                "          P                                                                 ",
+                "                                                                            ",
+                "                                                                            ",
+                "          I                                                                 ",
+                "       CCCCCCC               TT     CCC     CCC            CCCC             ",
+                "                    TT       TT                                             ",
+                "                    TT   I   TT          S         TTT                      ",
+                "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG             GGGGGGGGG",
             ]
         }
