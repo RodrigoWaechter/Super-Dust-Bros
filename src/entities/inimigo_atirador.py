@@ -20,7 +20,7 @@ class InimigoAtirador(Inimigo):
             spawn_x = self.centro_x + (offset * direcao)
             spawn_y = self.centro_y
 
-            proj = Projetil(spawn_x, spawn_y, direcao)
+            proj = Projetil(spawn_x, spawn_y, direcao, origem="inimigo")
             projeteis.append(proj)
 
             self.cooldown_tiro = self.tempo_entre_tiros

@@ -7,10 +7,11 @@ class HUD:
         self.start_time = None
 
     # Chamadas de desenho da hud
-    def draw(self, player):
+    def draw(self, player, nivel):
         self.draw_health_bar(player.vidas)
         self.draw_number(player.vidas, -0.54, 0.85)
         self.draw_timer()
+        self.draw_level_counter(nivel)
 
     # Construção do dígito
     def draw_digit(self, digit, x, y, size):
@@ -60,6 +61,10 @@ class HUD:
 
         glEnd()
 
+    def draw_level_counter(self, nivel):
+        # Desenha o número do nível no centro superior
+        self.draw_number(nivel, -0.05, 0.85)
+
     # Métodos do Timer
     def start_timer(self):
         self.start_time = time.time()
@@ -69,8 +74,8 @@ class HUD:
 
     def get_time(self):
         elapsed_time = int(time.time() - self.start_time)
-        print(self.start_time)
-        print(elapsed_time)
+       # print(self.start_time)
+       # print(elapsed_time)
         remaining_time = max(0, self.limit - elapsed_time)
         return remaining_time
 
