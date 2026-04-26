@@ -36,8 +36,10 @@ class Personagem(GameObject):
 
             glEnd()
 
-    def update_physics(self, delta_time):
-        # Gravidade e movimento
-        self.vel_y += self.settings.gravity * delta_time
+
+    def update_physics_x(self, delta_time):
         self.centro_x += self.vel_x * delta_time
+
+    def update_physics_y(self, delta_time):
+        self.vel_y += self.settings.gravity * delta_time
         self.centro_y += self.vel_y * delta_time

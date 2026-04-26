@@ -1,4 +1,6 @@
 from src.entities.personagem import Personagem
+from src.entities.projetil import Projetil
+
 
 class Player(Personagem):
     def __init__(self, settings):
@@ -11,6 +13,7 @@ class Player(Personagem):
             settings=settings
         )
         self.vidas = settings.player_vidas
+        self.tem_item = False
         self.invulneravel_tempo = 0
         self.direcao = 1
 
@@ -20,11 +23,43 @@ class Player(Personagem):
             self.no_chao = False
 
     def atirar(self):
-        direcao = self.direcao
+        if not self.tem_item:
+            return None
 
+        direcao = self.direcao
         offset = (self.width / 2) + 0.1
         spawn_x = self.centro_x + (offset * direcao)
         spawn_y = self.centro_y
 
-        from src.entities.projetil import Projetil
-        return Projetil(spawn_x, spawn_y, direcao)
+        return Projetil(spawn_x, spawn_y, direcao, origem="player")
+
+    def tomar_dano(self, quantidade):
+        if self.invulneravel_tempo <= 0:
+            self.vidas -= quantidade
+            self.invulneravel_tempo = 1.0
+
+            if self.vidas <= 0:
+                self.vidas = 0
+                self.morrer()
+
+    def reset_posicao(self):
+        self.centro_x = self.settings.player_start_x
+        self.centro_y = self.settings.player_start_y
+        self.vel_x = 0.0
+        self.vel_y = 0.0
+        self.tem_item = False
+
+    def morrer(self):
+        pass
+
+    def update_physics_y(self, dt):
+        if not self.no_chao or self.vel_y > 0:
+            self.vel_y += self.settings.gravity * dt
+
+            # Limita a velocidade pro player nãoo bugar e atravessar o chão
+            if self.vel_y < -4.5:
+                self.vel_y = -4.5
+
+            self.centro_y += self.vel_y * dt
+        else:
+            self.vel_y = 0
