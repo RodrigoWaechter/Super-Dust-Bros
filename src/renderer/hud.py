@@ -7,11 +7,29 @@ class HUD:
         self.start_time = None
 
     # Chamadas de desenho da hud
-    def draw(self, player, nivel):
+    def draw(self, player, mundo, fase):
         self.draw_health_bar(player.vidas)
         self.draw_number(player.vidas, -0.54, 0.85)
         self.draw_timer()
-        self.draw_level_counter(nivel)
+        self.draw_world_stage(mundo, fase)
+
+    def draw_world_stage(self, mundo, fase):
+        texto = f"{mundo}-{fase}"
+
+        size = 0.03
+        spacing = size * 1.4
+
+        x = -0.05
+        y = 0.85
+
+        for i, char in enumerate(texto):
+            if char == "-":
+                glBegin(GL_LINES)
+                glVertex2f(x + i * spacing, y + size)
+                glVertex2f(x + i * spacing + size, y + size)
+                glEnd()
+            else:
+                self.draw_digit(char, x + i * spacing, y, size)
 
     # Construção do dígito
     def draw_digit(self, digit, x, y, size):

@@ -6,6 +6,8 @@ from src.fase.mapa import Mapa
 from src.renderer.hud import HUD
 from src.entities.inimigo import Inimigo
 from src.entities.inimigo_atirador import InimigoAtirador
+from src.utils import load_texture
+from src.renderer.parallax import ParallaxLayer
 
 
 class GameEngine:
@@ -15,12 +17,15 @@ class GameEngine:
         self.player = Player(self.settings)
         self.camera_x = 0.0
 
-        self.nivel_atual = 1
-        self.mapa_atual = Mapa(dificuldade=self.nivel_atual, settings=self.settings)
+        self.mundo = 1
+        self.fase = 1
+        self.fases_por_mundo = 3
+        self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
         self.inimigos = self.mapa_atual.inimigos
 
         self.power_ups_ativos = []
         self.projeteis = []
+        self.bg_layers = []
         self.mouse_pressed = False
         self.hud = HUD()
         self.window = None
@@ -34,6 +39,12 @@ class GameEngine:
         glfw.make_context_current(self.window)
         glfw.swap_interval(1)
         self.last_time = glfw.get_time()
+
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(-1, 1, -1, 1, -1, 1)
+
+        glMatrixMode(GL_MODELVIEW)
 
     def process_input(self):
         # Lida com comandos do teclado e mouse para movimentação e ataque
@@ -74,20 +85,43 @@ class GameEngine:
         self.handle_inimigos(delta_time)
         self.handle_projeteis(delta_time)
         self.update_power_ups(delta_time)
+        self.player.update_estado()
+        self.player.update_animacao(delta_time)
 
         self.update_camera()
         self.check_world_bounds()
 
         # Gatilho para passar de fase
         if self.player.check_collision(self.mapa_atual.objetivo):
-            print(f"\nBOMB PLANTED! Terrorists Win! Avançando para Nível {self.nivel_atual + 1}")
+            print(f"\nAvançando para {self.mundo}-{self.fase}")
             self.avancar_fase()
 
+    def load_backgrounds(self):
+        backgrounds = {
+            1: "assets/background/dust.jpg",
+            2: "assets/background/mirage.jpg",
+            3: "assets/background/cache.jpg",
+        }
+
+        path = backgrounds.get(self.mundo, "assets/background/dust.jpg")
+
+        tex, w, h = load_texture(path)
+
+        self.bg_layers = [
+            ParallaxLayer(tex, w, h, 0.2),
+        ]
+
     def avancar_fase(self):
-        # Constrói o próximo mapa e limpa a tela de resíduos da fase anterior
-        self.nivel_atual += 1
-        self.mapa_atual = Mapa(dificuldade=self.nivel_atual, settings=self.settings)
+        self.fase += 1
+
+        if self.fase > self.fases_por_mundo:
+            self.fase = 1
+            self.mundo += 1
+            self.load_backgrounds()
+
+        self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
         self.inimigos = self.mapa_atual.inimigos
+
         self.player.reset_posicao()
         self.camera_x = 0.0
         self.power_ups_ativos.clear()
@@ -96,26 +130,31 @@ class GameEngine:
 
     def reiniciar_jogo(self):
         # Volta ao estaca zero caso perca vidas ou tempo esgote
-        self.nivel_atual = 1
-        self.mapa_atual = Mapa(dificuldade=self.nivel_atual, settings=self.settings)
+        self.mundo = 1
+        self.fase = 1
+
+        self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
         self.inimigos = self.mapa_atual.inimigos
+
         self.player.vidas = self.settings.player_vidas
         self.player.reset_posicao()
         self.camera_x = 0.0
         self.power_ups_ativos.clear()
         self.projeteis.clear()
         self.hud.reset_timer()
+
+        self.load_backgrounds()
+
         print("\n*** GAME OVER! Jogo reiniciado na fase inicial. ***")
 
     def handle_player_physics_x(self, dt):
-        # Movimentação horizontal e travamento ao bater em paredes laterais
         self.player.update_physics_x(dt)
         for obj in self.mapa_atual.obstacles:
             if self.player.check_collision(obj):
                 if self.player.vel_x > 0:
-                    self.player.centro_x = obj.canto_inf_esq_x - (self.player.width / 2)
+                    self.player.centro_x = obj.canto_inf_esq_x - (self.player.hitbox_width  / 2)
                 elif self.player.vel_x < 0:
-                    self.player.centro_x = obj.canto_inf_dir_x + (self.player.width / 2)
+                    self.player.centro_x = obj.canto_inf_dir_x + (self.player.hitbox_width  / 2)
 
     def handle_player_physics_y(self, dt):
         # Aplicação da gravidade e detecção de colisão com teto e chão
@@ -128,12 +167,12 @@ class GameEngine:
             if self.player.check_collision(obj):
                 if self.player.vel_y > 0:
                     if self.player.centro_y < obj.centro_y:
-                        self.player.centro_y = obj.canto_inf_esq_y - (self.player.height / 2)
+                        self.player.centro_y = obj.canto_inf_esq_y - (self.player.hitbox_height / 2)
                         self.player.vel_y = 0
                         self.handle_power_up_block(obj)
                 elif self.player.vel_y <= 0:
                     if self.player.canto_inf_esq_y > (obj.canto_sup_esq_y - margem_quina):
-                        self.player.centro_y = obj.canto_sup_esq_y + (self.player.height / 2)
+                        self.player.centro_y = obj.canto_sup_esq_y + (self.player.hitbox_height / 2)
                         self.player.vel_y = 0
                         self.player.no_chao = True
 
@@ -245,6 +284,13 @@ class GameEngine:
         glClear(GL_COLOR_BUFFER_BIT)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glLoadIdentity()
+
+        screen_w = 2.0
+        screen_h = 2.0
+
+        for layer in self.bg_layers:
+            layer.draw(self.camera_x)
 
         self.mapa_atual.objetivo.draw(self.camera_x)
 
@@ -258,13 +304,15 @@ class GameEngine:
             proj.draw(self.camera_x)
 
         self.player.draw(self.camera_x)
-        self.hud.draw(self.player, self.nivel_atual)
+        self.hud.draw(self.player, self.mundo, self.fase)
 
         glfw.swap_buffers(self.window)
 
     def run(self):
         # Loop central de execução contínua
         self.init_window()
+        self.load_backgrounds()
+        self.player.load_sprites()
         self.hud.start_timer()
 
         while not glfw.window_should_close(self.window):

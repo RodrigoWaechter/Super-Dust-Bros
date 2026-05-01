@@ -7,24 +7,28 @@ class GameObject:
         self.width = width
         self.height = height
         self.color = color
+        self.hitbox_width = width
+        self.hitbox_height = height
+        self.render_width = width
+        self.render_height = height
 
     # Propriedades para cálculo de bordas e colisões
     @property
-    def canto_inf_esq_x(self): return self.centro_x - self.width / 2
+    def canto_inf_esq_x(self): return self.centro_x - self.hitbox_width / 2
     @property
-    def canto_inf_esq_y(self): return self.centro_y - self.height / 2
+    def canto_inf_esq_y(self): return self.centro_y - self.hitbox_height / 2
     @property
-    def canto_inf_dir_x(self): return self.centro_x + self.width / 2
+    def canto_inf_dir_x(self): return self.centro_x + self.hitbox_width / 2
     @property
-    def canto_inf_dir_y(self): return self.centro_y - self.height / 2
+    def canto_inf_dir_y(self): return self.centro_y - self.hitbox_height / 2
     @property
-    def canto_sup_dir_x(self): return self.centro_x + self.width / 2
+    def canto_sup_dir_x(self): return self.centro_x + self.hitbox_width / 2
     @property
-    def canto_sup_dir_y(self): return self.centro_y + self.height / 2
+    def canto_sup_dir_y(self): return self.centro_y + self.hitbox_height / 2
     @property
-    def canto_sup_esq_x(self): return self.centro_x - self.width / 2
+    def canto_sup_esq_x(self): return self.centro_x - self.hitbox_width / 2
     @property
-    def canto_sup_esq_y(self): return self.centro_y + self.height / 2
+    def canto_sup_esq_y(self): return self.centro_y + self.hitbox_height / 2
 
     def check_collision(self, other):
         return (self.canto_inf_esq_x < other.canto_inf_dir_x and
