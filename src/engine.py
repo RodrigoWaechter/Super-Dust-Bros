@@ -22,6 +22,7 @@ class GameEngine:
         self.fases_por_mundo = 3
         self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
         self.inimigos = self.mapa_atual.inimigos
+        self.estado = "menu"
 
         self.power_ups_ativos = []
         self.projeteis = []
@@ -47,6 +48,13 @@ class GameEngine:
         glMatrixMode(GL_MODELVIEW)
 
     def process_input(self):
+
+        if self.estado == "menu":
+            if glfw.get_key(self.window, glfw.KEY_ENTER) == glfw.PRESS:
+                self.estado = "jogo"
+                self.hud.start_timer()
+            return
+
         # Lida com comandos do teclado e mouse para movimentação e ataque
         self.player.vel_x = 0
 
@@ -71,6 +79,10 @@ class GameEngine:
             self.mouse_pressed = False
 
     def update(self):
+
+        if self.estado == "menu":
+            return
+
         # Atualiza o ciclo lógico de todos os elementos na tela a cada frame
         delta_time = glfw.get_time() - self.last_time
         self.last_time = glfw.get_time()
@@ -279,6 +291,12 @@ class GameEngine:
             self.reiniciar_jogo()
 
     def render(self):
+
+        if self.estado == "menu":
+            self.hud.draw_menu(self.bg_layers)
+            glfw.swap_buffers(self.window)
+            return
+
         # Limpa o frame anterior e desenha o fundo, objetos físicos e a Interface gráfica
         glClearColor(0.5, 0.8, 0.9, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)

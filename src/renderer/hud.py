@@ -31,6 +31,19 @@ class HUD:
             else:
                 self.draw_digit(char, x + i * spacing, y, size)
 
+    def draw_menu(self, bg_layers):
+        glClearColor(0.5, 0.8, 0.9, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
+
+        for layer in bg_layers:
+            layer.draw(0)
+
+        self.draw_text("SUPER DUST BROS", -0.7, 0.2, 0.08)
+
+        if int(time.time() * 2) % 2 == 0:
+            self.draw_text("PLAY", -0.1, -0.1, 0.05)
+
     # Construção do dígito
     def draw_digit(self, digit, x, y, size):
         segmentos = {
@@ -74,7 +87,6 @@ class HUD:
         # esquerda superior
         if seg[5]: quad(x, y + h / 2, x + thickness, y + h)
 
-        # meio
         if seg[6]: quad(x, y + h / 2 - thickness / 2, x + w, y + h / 2 + thickness / 2)
 
         glEnd()
@@ -150,3 +162,86 @@ class HUD:
 
         for i, digit in enumerate(str(int(number))):
             self.draw_digit(digit, x + i * spacing, y, size)
+
+    def draw_text(self, text, x, y, size):
+        spacing = size * 1.2
+
+        for i, char in enumerate(text):
+            self.draw_char(char, x + i * spacing, y, size)
+
+    def draw_char(self, char, x, y, size):
+        char = char.upper()
+
+        if char == " ":
+            return
+
+        thickness = size * 0.3
+        w = size
+        h = size * 2
+
+        def quad(x1, y1, x2, y2):
+            glVertex2f(x1, y1)
+            glVertex2f(x2, y1)
+            glVertex2f(x2, y2)
+            glVertex2f(x1, y2)
+
+        glColor3f(1, 1, 1)
+
+        if char == "T":
+            glBegin(GL_QUADS)
+
+            quad(x, y + h - thickness, x + w, y + h)
+
+            quad(x + w / 2 - thickness / 2, y, x + w / 2 + thickness / 2, y + h)
+
+            glEnd()
+            return
+
+        if char == "M":
+            glBegin(GL_QUADS)
+
+            quad(x, y, x + thickness, y + h)
+            quad(x + w - thickness, y, x + w, y + h)
+
+            quad(x + w * 0.3, y + h * 0.5, x + w * 0.4, y + h)
+            quad(x + w * 0.6, y + h * 0.5, x + w * 0.7, y + h)
+
+            glEnd()
+            return
+
+        patterns = {
+            "A": [1, 1, 1, 0, 1, 1, 1],
+            "B": [1, 1, 1, 1, 1, 1, 1],
+            "C": [1, 0, 0, 1, 1, 1, 0],
+            "D": [1, 1, 1, 1, 1, 1, 0],
+            "E": [1, 0, 0, 1, 1, 1, 1],
+            "F": [1, 0, 0, 0, 1, 1, 1],
+            "G": [1, 0, 1, 1, 1, 1, 0],
+            "H": [0, 1, 1, 0, 1, 1, 1],
+            "I": [0, 1, 1, 0, 0, 0, 0],
+            "J": [0, 1, 1, 1, 0, 0, 0],
+            "L": [0, 0, 0, 1, 1, 1, 0],
+            "O": [1, 1, 1, 1, 1, 1, 0],
+            "P": [1, 1, 0, 0, 1, 1, 1],
+            "R": [1, 1, 1, 0, 1, 1, 1],
+            "S": [1, 0, 1, 1, 0, 1, 1],
+            "U": [0, 1, 1, 1, 1, 1, 0],
+            "Y": [0, 1, 1, 1, 0, 1, 1],
+        }
+
+        if char not in patterns:
+            return
+
+        seg = patterns[char]
+
+        glBegin(GL_QUADS)
+
+        if seg[0]: quad(x, y + h - thickness, x + w, y + h)
+        if seg[1]: quad(x + w - thickness, y + h / 2, x + w, y + h)
+        if seg[2]: quad(x + w - thickness, y, x + w, y + h / 2)
+        if seg[3]: quad(x, y, x + w, y + thickness)
+        if seg[4]: quad(x, y, x + thickness, y + h / 2)
+        if seg[5]: quad(x, y + h / 2, x + thickness, y + h)
+        if seg[6]: quad(x, y + h / 2 - thickness / 2, x + w, y + h / 2 + thickness / 2)
+
+        glEnd()
