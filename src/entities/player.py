@@ -3,6 +3,7 @@ from src.entities.projetil import Projetil
 from OpenGL.GL import *
 from src.utils import load_texture
 
+
 class Player(Personagem):
     def __init__(self, settings):
         super().__init__(
@@ -15,7 +16,11 @@ class Player(Personagem):
         )
         self.vidas = settings.player_vidas
         self.tem_item = False
-        self.tem_granada = False
+
+        # Novo sistema de inventário de arremessáveis
+        self.tem_arremessavel = False
+        self.tipo_arremessavel = None  # Pode ser "GRANADA" ou "MOLOTOV"
+
         self.invulneravel_tempo = 0
         self.direcao = 1
         self.hitbox_width = self.width * 0.5
@@ -144,13 +149,17 @@ class Player(Personagem):
         return Projetil(spawn_x, spawn_y, direcao, origem="player")
 
     def arremessar(self):
-        # Só arremessa se tiver a granada
-        if not getattr(self, 'tem_granada', False):
+        # Só arremessa se tiver algum item arremessável
+        if not self.tem_arremessavel:
             return None
 
-        # Consome a granada
-        self.tem_granada = False
-        print("Lançou a granada!")
+        tipo = self.tipo_arremessavel
+
+        # Consome o item do inventário
+        self.tem_arremessavel = False
+        self.tipo_arremessavel = None
+
+        print(f"Lançou a {tipo}!")
 
         direcao = self.direcao
 
@@ -162,8 +171,15 @@ class Player(Personagem):
         # AUMENTAMOS o spawn_y para nascer na altura da cabeça (evita bater no chão na hora)
         spawn_y = self.centro_y + 0.1
 
-        from src.entities.projetil import GranadaAtiva
-        return GranadaAtiva(spawn_x, spawn_y, direcao, origem="player")
+        # Instancia o projétil correspondente ao tipo que estava no inventário
+        if tipo == "GRANADA":
+            from src.entities.projetil import GranadaAtiva
+            return GranadaAtiva(spawn_x, spawn_y, direcao, origem="player")
+        elif tipo == "MOLOTOV":
+            from src.entities.projetil import MolotovAtiva
+            return MolotovAtiva(spawn_x, spawn_y, direcao, origem="player")
+
+        return None
 
     def tomar_dano(self, quantidade):
         if self.invulneravel_tempo <= 0:
@@ -179,8 +195,11 @@ class Player(Personagem):
         self.centro_y = self.settings.player_start_y
         self.vel_x = 0.0
         self.vel_y = 0.0
+
+        # Reseta o inventário ao morrer/reiniciar
         self.tem_item = False
-        self.tem_granada = False
+        self.tem_arremessavel = False
+        self.tipo_arremessavel = None
 
     def morrer(self):
         pass
@@ -241,4 +260,3 @@ class Player(Personagem):
                     return self.sprites_jump_arma[0]
                 else:
                     return self.sprites_jump[0]
-
