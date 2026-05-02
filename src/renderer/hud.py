@@ -12,6 +12,8 @@ class HUD:
         self.draw_number(player.vidas, -0.54, 0.85)
         self.draw_timer()
         self.draw_world_stage(mundo, fase)
+        if getattr(player, 'tem_granada', False):
+            self.draw_grenade_indicator()
 
     def draw_world_stage(self, mundo, fase):
         texto = f"{mundo}-{fase}"
@@ -30,6 +32,33 @@ class HUD:
                 glEnd()
             else:
                 self.draw_digit(char, x + i * spacing, y, size)
+
+    def draw_grenade_indicator(self):
+        """
+        Desenha um ícone minimalista roxo (uma granada) abaixo da barra de vida.
+        """
+        x = -0.95
+        y = 0.72  # Posicionado logo abaixo da barra de vida
+        largura = 0.04
+        altura = 0.05
+
+        # Corpo da Granada (Roxo)
+        glColor3f(0.5, 0.0, 0.5)
+        glBegin(GL_QUADS)
+        glVertex2f(x, y)
+        glVertex2f(x + largura, y)
+        glVertex2f(x + largura, y + altura)
+        glVertex2f(x, y + altura)
+        glEnd()
+
+        # Pino da Granada (Cinza)
+        glColor3f(0.7, 0.7, 0.7)
+        glBegin(GL_QUADS)
+        glVertex2f(x + largura * 0.3, y + altura)
+        glVertex2f(x + largura * 0.7, y + altura)
+        glVertex2f(x + largura * 0.7, y + altura + 0.02)
+        glVertex2f(x + largura * 0.3, y + altura + 0.02)
+        glEnd()
 
     def draw_menu(self, bg_layers):
         glClearColor(0.5, 0.8, 0.9, 1.0)

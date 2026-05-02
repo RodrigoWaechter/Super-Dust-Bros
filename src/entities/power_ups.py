@@ -1,25 +1,28 @@
+import random
+
 from src.entities.game_object import GameObject
 from src.utils import load_texture
 from OpenGL.GL import *
 
 class power_ups(GameObject):
     """
-    Representa os itens que surges ao abrir uma caixa.
-     - Gerencia a animação de spawn e a renderização da textura.
-    """
+        Representa a AK-47 que surge ao abrir uma caixa.
+         - Gerencia a animação de spawn e a renderização da textura.
+        """
+
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height, (1.0, 1.0, 1.0))
 
-        #movmentação do item
+        # movimentação do item
         self.vel_x = 0.0
         self.vel_y = 0.0
         self.gravity = -2.5
-        self.texture = None # lazy loading
+        self.texture = None  # lazy loading
 
-        #animação de spawn
+        # animação de spawn
         self.is_spawnning = True
         self.spawn_speed = 0.5
-        #subir uma casa dps do spawn
+        # subir uma casa dps do spawn
         self.spawn_target_y = y + height
 
     def update(self, dt):
@@ -62,14 +65,67 @@ class power_ups(GameObject):
         glEnd()
         glDisable(GL_TEXTURE_2D)
 
+
+class ItemGranada(GameObject):
+
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height, (1.0, 1.0, 1.0))
+
+        self.vel_x = 0.0
+        self.vel_y = 0.0
+        self.gravity = -2.5
+        self.texture = None
+
+        self.is_spawnning = True
+        self.spawn_speed = 0.5
+        self.spawn_target_y = y + height
+
+    def update(self, dt):
+        if self.is_spawnning:
+            self.centro_y += self.spawn_speed * dt
+            if self.centro_y >= self.spawn_target_y:
+                self.is_spawnning = False
+                self.centro_y = self.spawn_target_y
+        else:
+            self.vel_y += self.gravity * dt
+            self.centro_x += self.vel_x * dt
+            self.centro_y += self.vel_y * dt
+
+    def draw(self, camera_x=0.0):
+        if self.texture is None:
+            self.texture = load_texture("assets/power_ups/power-up-granada.png")[0]
+
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+
+        glColor3f(1.0, 1.0, 1.0)
+
+        escala = 1.15
+
+        x = self.centro_x - camera_x
+        y = self.centro_y
+        half_w = (self.width / 2) * escala
+        half_h = (self.height / 2) * escala
+
+        glBegin(GL_QUADS)
+        glTexCoord2f(0, 1);
+        glVertex2f(x - half_w, y - half_h)
+        glTexCoord2f(1, 1);
+        glVertex2f(x + half_w, y - half_h)
+        glTexCoord2f(1, 0);
+        glVertex2f(x + half_w, y + half_h)
+        glTexCoord2f(0, 0);
+        glVertex2f(x - half_w, y + half_h)
+        glEnd()
+        glDisable(GL_TEXTURE_2D)
+
+
 class blocoPowerUp(GameObject):
-    """
-    Bloco destrutível que contém o item power-up.
-    """
+
     def __init__(self, x, y, width, height):
         escala_horizontal = 2.2
         escala_vertical = 1.8
-        super().__init__(x,y,width * escala_horizontal,height * escala_vertical,(0.8, 0.4, 0.0))
+        super().__init__(x, y, width * escala_horizontal, height * escala_vertical, (0.8, 0.4, 0.0))
 
         self.foiAtingido = False
 
@@ -118,5 +174,14 @@ class blocoPowerUp(GameObject):
         if not self.foiAtingido:
             self.foiAtingido = True
             self.color = (0.4, 0.4, 0.4)
-            return power_ups(self.centro_x, self.centro_y, self.width, self.height)
+
+            #molotov no futuro!!!!!
+            opcoes_de_itens = ["AK47", "GRANADA"]
+            item_sorteado = random.choice(opcoes_de_itens)
+
+            if item_sorteado == "GRANADA":
+                return ItemGranada(self.centro_x, self.centro_y, self.width, self.height)
+            else:
+                return power_ups(self.centro_x, self.centro_y, self.width, self.height)
+
         return None

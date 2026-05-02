@@ -1,5 +1,7 @@
 import glfw
 from OpenGL.GL import *
+
+from src.entities.projetil import GranadaAtiva
 from src.settings import Settings
 from src.entities.player import Player
 from src.fase.mapa import Mapa
@@ -26,6 +28,7 @@ class GameEngine:
 
         self.power_ups_ativos = []
         self.projeteis = []
+        self.explosoes_visuais = []
         self.bg_layers = []
         self.mouse_pressed = False
         self.hud = HUD()
@@ -55,7 +58,6 @@ class GameEngine:
                 self.hud.start_timer()
             return
 
-        # Lida com comandos do teclado e mouse para movimentação e ataque
         self.player.vel_x = 0
 
         if glfw.get_key(self.window, glfw.KEY_A) == glfw.PRESS:
@@ -69,6 +71,7 @@ class GameEngine:
         if glfw.get_key(self.window, glfw.KEY_W) == glfw.PRESS:
             self.player.jump()
 
+        # Controle de Tiro (AK-47) - Botão Esquerdo
         if glfw.get_mouse_button(self.window, glfw.MOUSE_BUTTON_LEFT) == glfw.PRESS:
             if not self.mouse_pressed and self.player.tem_item:
                 proj = self.player.atirar()
@@ -77,6 +80,19 @@ class GameEngine:
                 self.mouse_pressed = True
         else:
             self.mouse_pressed = False
+
+        # Controle da Granada - Botão Direito
+        if glfw.get_mouse_button(self.window, glfw.MOUSE_BUTTON_RIGHT) == glfw.PRESS:
+            if not getattr(self, 'mouse_right_pressed', False) and getattr(self.player, 'tem_granada', False):
+
+                granada_arremessada = self.player.arremessar()
+                if granada_arremessada:
+                    self.projeteis.append(granada_arremessada)
+                    print("Lançou a granada e adicionou na tela!")
+
+                self.mouse_right_pressed = True
+        else:
+            self.mouse_right_pressed = False
 
     def update(self):
 
@@ -96,6 +112,7 @@ class GameEngine:
         self.handle_player_physics_y(delta_time)
         self.handle_inimigos(delta_time)
         self.handle_projeteis(delta_time)
+        self.handle_explosoes(delta_time)
         self.update_power_ups(delta_time)
         self.player.update_estado()
         self.player.update_animacao(delta_time)
@@ -221,33 +238,47 @@ class GameEngine:
             if isinstance(inimigo, InimigoAtirador):
                 inimigo.update(dt, self.player, self.projeteis)
 
+    def handle_explosoes(self, dt):
+        for exp in self.explosoes_visuais[:]:
+            exp.update(dt)
+            if exp.destruir:
+                self.explosoes_visuais.remove(exp)
+
     def handle_projeteis(self, dt):
-        # Trata o tempo de vida, alcance e danos dos tiros de ambas as fontes
         for proj in self.projeteis[:]:
             proj.update(dt)
 
-            if proj.destruir or proj.centro_x < self.camera_x - 2 or proj.centro_x > self.camera_x + 2:
-                if proj in self.projeteis: self.projeteis.remove(proj)
+            #Checa se o tempo de vida acabou ou saiu da tela
+            if getattr(proj, 'destruir', False):
+                if isinstance(proj, GranadaAtiva):
+                    self.explodir_granada(proj)  # Explode antes de sumir
+                self.projeteis.remove(proj)
                 continue
 
-            bateu = False
+            # Checa colisão com paredes/chão
+            bateu_obstaculo = False
             for obj in self.mapa_atual.obstacles:
                 if proj.check_collision(obj):
-                    if proj in self.projeteis: self.projeteis.remove(proj)
-                    bateu = True
+                    if isinstance(proj, GranadaAtiva):
+                        self.explodir_granada(proj)  # Explode ao tocar no chão/parede
+                    self.projeteis.remove(proj)
+                    bateu_obstaculo = True
                     break
-            if bateu: continue
+            if bateu_obstaculo: continue
 
+            # Checa colisão direta com inimigos
             if proj.origem == "player":
                 for inimigo in self.inimigos[:]:
                     if proj.check_collision(inimigo):
-                        if inimigo in self.inimigos: self.inimigos.remove(inimigo)
-                        if proj in self.projeteis: self.projeteis.remove(proj)
+                        if isinstance(proj, GranadaAtiva):
+                            self.explodir_granada(proj)
+                        else:
+                            # Comportamento normal da AK-47
+                            self.inimigos.remove(inimigo)
+
+                        if proj in self.projeteis:
+                            self.projeteis.remove(proj)
                         break
-            elif proj.origem == "inimigo":
-                if proj in self.projeteis and self.player.check_collision(proj):
-                    self.player.tomar_dano(35)
-                    self.projeteis.remove(proj)
 
     def handle_power_up_block(self, obj):
         # Solta um item de upgrade quando o player cabeceia um bloco de poder
@@ -263,10 +294,20 @@ class GameEngine:
             p_up.update(dt)
 
             if self.player.check_collision(p_up):
-                self.player.tem_item = True
+                #identificação do item coletado
+                tipo_item = p_up.__class__.__name__
+
+                if tipo_item == "ItemGranada":
+                    self.player.tem_granada = True
+                    print("Granada coletada!")
+                else:
+                    self.player.tem_item = True
+                    print("AK-47 coletada!")
+
                 self.power_ups_ativos.remove(p_up)
                 continue
 
+            # Física de queda do item
             if not getattr(p_up, 'is_spawnning', False):
                 for obj in self.mapa_atual.obstacles:
                     if p_up.check_collision(obj):
@@ -321,6 +362,9 @@ class GameEngine:
         for proj in self.projeteis:
             proj.draw(self.camera_x)
 
+        for exp in self.explosoes_visuais:
+            exp.draw(self.camera_x)
+
         self.player.draw(self.camera_x)
         self.hud.draw(self.player, self.mundo, self.fase)
 
@@ -340,3 +384,28 @@ class GameEngine:
             self.render()
 
         glfw.terminate()
+
+    def explodir_granada(self, granada):
+        import math
+        from src.entities.explosao import ExplosaoVisual  # Importa o efeito
+
+        print("A granada explodiu!")
+
+        # Cria o efeito visual na posição da granada
+        efeito = ExplosaoVisual(granada.centro_x, granada.centro_y, granada.raio_explosao * 2.0)
+        self.explosoes_visuais.append(efeito)
+
+        # Lógica de dano que você já fez
+        inimigos_atingidos = []
+        for inimigo in self.inimigos:
+            dx = inimigo.centro_x - granada.centro_x
+            dy = inimigo.centro_y - granada.centro_y
+            distancia = math.sqrt(dx ** 2 + dy ** 2)
+
+            if distancia <= granada.raio_explosao:
+                inimigos_atingidos.append(inimigo)
+
+        for inimigo in inimigos_atingidos:
+            if inimigo in self.inimigos:
+                self.inimigos.remove(inimigo)
+                print("Inimigo eliminado pela explosão!")
