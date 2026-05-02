@@ -1,14 +1,20 @@
 from src.entities.game_object import GameObject
-
+from src.utils import load_texture
+from OpenGL.GL import *
 
 class power_ups(GameObject):
-    def __init__(self, x, y, width, height, color=(1.0, 0.0, 0.0)):
-        #item vermelho
-        super().__init__(x, y, width, height, color)
+    """
+    Representa os itens que surges ao abrir uma caixa.
+     - Gerencia a animação de spawn e a renderização da textura.
+    """
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height, (1.0, 1.0, 1.0))
+
         #movmentação do item
         self.vel_x = 0.0
         self.vel_y = 0.0
         self.gravity = -2.5
+        self.texture = None # lazy loading
 
         #animação de spawn
         self.is_spawnning = True
@@ -27,10 +33,86 @@ class power_ups(GameObject):
             self.centro_x += self.vel_x * dt
             self.centro_y += self.vel_y * dt
 
+    def draw(self, camera_x=0.0):
+        """Renderiza a imagem da AK-47."""
+        if self.texture is None:
+            # carrega a textura apenas uma vez
+            self.texture = load_texture("assets/power_ups/power-up-ak.jpg")[0]
+
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glColor3f(1.0, 1.0, 1.0)
+
+        escala = 1.15
+
+        x = self.centro_x - camera_x
+        y = self.centro_y
+        half_w = (self.width / 2) * escala
+        half_h = (self.height / 2) * escala
+
+        glBegin(GL_QUADS)
+        glTexCoord2f(0, 1);
+        glVertex2f(x - half_w, y - half_h)
+        glTexCoord2f(1, 1);
+        glVertex2f(x + half_w, y - half_h)
+        glTexCoord2f(1, 0);
+        glVertex2f(x + half_w, y + half_h)
+        glTexCoord2f(0, 0);
+        glVertex2f(x - half_w, y + half_h)
+        glEnd()
+        glDisable(GL_TEXTURE_2D)
+
 class blocoPowerUp(GameObject):
+    """
+    Bloco destrutível que contém o item power-up.
+    """
     def __init__(self, x, y, width, height):
-        super().__init__(x,y,width,height,(0.8, 0.4, 0.0))
+        escala_horizontal = 2.2
+        escala_vertical = 1.8
+        super().__init__(x,y,width * escala_horizontal,height * escala_vertical,(0.8, 0.4, 0.0))
+
         self.foiAtingido = False
+
+        self.tex_ativa = None
+        self.tex_vazia = None
+        self.texturas_carregadas = False
+
+    def _load_assets(self):
+        # carrega só quando for necessário
+        self.tex_ativa = load_texture("assets/power_ups/power-up-padrao.jpg")
+        self.tex_vazia = load_texture("assets/power_ups/power-up-atingido.jpg")
+        self.texturas_carregadas = True
+
+    def draw(self, camera_x=0.0):
+
+        # verifica se as texturas já foram carregadas
+        if not self.texturas_carregadas:
+            self._load_assets()
+
+        # extrai apenas o ID da textura
+        texture_data = self.tex_vazia if self.foiAtingido else self.tex_ativa
+        texture_id = texture_data[0]
+
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, texture_id)
+        glColor3f(1.0, 1.0, 1.0)
+
+        x = self.centro_x - camera_x
+        y = self.centro_y
+        half_w = self.width / 2
+        half_h = self.height / 2
+
+        glBegin(GL_QUADS)
+        glTexCoord2f(0, 1);
+        glVertex2f(x - half_w, y - half_h)
+        glTexCoord2f(1, 1);
+        glVertex2f(x + half_w, y - half_h)
+        glTexCoord2f(1, 0);
+        glVertex2f(x + half_w, y + half_h)
+        glTexCoord2f(0, 0);
+        glVertex2f(x - half_w, y + half_h)
+        glEnd()
+        glDisable(GL_TEXTURE_2D)
 
     def baterPorBaixo(self):
         if not self.foiAtingido:
