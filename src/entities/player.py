@@ -15,6 +15,7 @@ class Player(Personagem):
         )
         self.vidas = settings.player_vidas
         self.tem_item = False
+        self.tem_granada = False
         self.invulneravel_tempo = 0
         self.direcao = 1
         self.hitbox_width = self.width * 0.5
@@ -142,6 +143,28 @@ class Player(Personagem):
 
         return Projetil(spawn_x, spawn_y, direcao, origem="player")
 
+    def arremessar(self):
+        # Só arremessa se tiver a granada
+        if not getattr(self, 'tem_granada', False):
+            return None
+
+        # Consome a granada
+        self.tem_granada = False
+        print("Lançou a granada!")
+
+        direcao = self.direcao
+
+        # AUMENTAMOS o offset_x para nascer mais longe do corpo
+        offset_x = (self.hitbox_width / 2) + 0.1
+
+        spawn_x = self.centro_x + (offset_x * direcao)
+
+        # AUMENTAMOS o spawn_y para nascer na altura da cabeça (evita bater no chão na hora)
+        spawn_y = self.centro_y + 0.1
+
+        from src.entities.projetil import GranadaAtiva
+        return GranadaAtiva(spawn_x, spawn_y, direcao, origem="player")
+
     def tomar_dano(self, quantidade):
         if self.invulneravel_tempo <= 0:
             self.vidas -= quantidade
@@ -157,6 +180,7 @@ class Player(Personagem):
         self.vel_x = 0.0
         self.vel_y = 0.0
         self.tem_item = False
+        self.tem_granada = False
 
     def morrer(self):
         pass
@@ -217,3 +241,4 @@ class Player(Personagem):
                     return self.sprites_jump_arma[0]
                 else:
                     return self.sprites_jump[0]
+
