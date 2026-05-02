@@ -57,7 +57,7 @@ class GranadaAtiva(GameObject):
     def draw(self, camera_x=0.0):
         #granada girando no ar
         if self.texture is None:
-            self.texture = load_texture("assets/power_ups/power-up-granada.png")[0]
+            self.texture = load_texture("assets/power_ups/power-up-he.png")[0]
 
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, self.texture)
