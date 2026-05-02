@@ -17,13 +17,21 @@ class Mapa:
         self.objetivo = None
 
         self.texturas_chao = {
-            1: "assets/texturas_chao/chao-cache.jpg",
+            1: "assets/texturas_chao/chao-dust2.jpg",
             2: "assets/texturas_chao/chao-mirage.jpg",
             3: "assets/texturas_chao/chao-cache.jpg"
         }
 
-        # pega a textura do mundo atual ou usa uma padrão se não existir
+        # pega a textura do mundo atual ou usa uma padrao se não existir
         self.tex_path = self.texturas_chao.get(mundo, "assets/textures/padrao_chao.jpg")    # não tem chão padrão :D
+
+        self.texturas_obstaculos = {
+            1: "assets/texturas_obstaculos/bloco-dust2.png",
+            2: "assets/texturas_obstaculos/bloco-mirage.png",
+            3: "assets/texturas_obstaculos/bloco-cache.png"
+        }
+
+        self.obs_path = self.texturas_obstaculos.get(self.mundo, None)
 
         self.gerar_fase()
 
@@ -50,7 +58,7 @@ class Mapa:
                 continue
 
             if col < 4 or col > tamanho_fase - 4 or random.random() > chance_buraco:
-                # Substituímos o Obstaculo cinza pelo ChaoTexturizado
+                # substituímos o obstaculo cinza pelo chao texturizado
                 self.obstacles.append(ChaoTexturizado(x, y_chao, self.tile_size, self.tile_size, self.tex_path))
 
                 if 4 < col < tamanho_fase - 4:
@@ -60,7 +68,7 @@ class Mapa:
                         if random.random() < 0.1:
                             self.obstacles.append(blocoPowerUp(x, altura, self.tile_size, self.tile_size))
                         else:
-                            self.obstacles.append(Obstaculo(x, altura, self.tile_size, self.tile_size, (0.6, 0.4, 0.2)))
+                            self.obstacles.append(Obstaculo(x, altura, self.tile_size, self.tile_size, texture_path=self.obs_path))
 
                     elif random.random() < chance_inimigo:
                         y_inimigo = y_chao + self.tile_size

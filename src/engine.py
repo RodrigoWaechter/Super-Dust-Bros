@@ -134,11 +134,9 @@ class GameEngine:
 
         path = backgrounds.get(self.mundo, "assets/background/dust.jpg")
 
-        tex, w, h = load_texture(path)
-
-        self.bg_layers = [
-            ParallaxLayer(tex, w, h, 0.2),
-        ]
+        # Limpa as camadas antigas e coloca a nova
+        # Fator 0.1 significa que ele move 10% da velocidade da câmera (bem lento)
+        self.bg_layers = [ParallaxLayer(path, 0.1)]
 
     def avancar_fase(self):
         self.fase += 1
@@ -338,7 +336,7 @@ class GameEngine:
             glfw.swap_buffers(self.window)
             return
 
-        # Limpa o frame anterior e desenha o fundo, objetos físicos e a Interface gráfica
+        # limpa o frame anterior e desenha o fundo, objetos físicos e a Interface gráfica
         glClearColor(0.5, 0.8, 0.9, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
         glEnable(GL_BLEND)
