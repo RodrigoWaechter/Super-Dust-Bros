@@ -3,6 +3,7 @@ from src.entities.obstaculo import Obstaculo
 from src.entities.power_ups import blocoPowerUp
 from src.entities.inimigo import Inimigo
 from src.entities.inimigo_atirador import InimigoAtirador
+from src.entities.chao import ChaoTexturizado
 
 
 class Mapa:
@@ -14,6 +15,15 @@ class Mapa:
         self.fase = fase
         self.settings = settings
         self.objetivo = None
+
+        self.texturas_chao = {
+            1: "assets/texturas_chao/chao-cache.jpg",
+            2: "assets/texturas_chao/chao-mirage.jpg",
+            3: "assets/texturas_chao/chao-cache.jpg"
+        }
+
+        # pega a textura do mundo atual ou usa uma padrão se não existir
+        self.tex_path = self.texturas_chao.get(mundo, "assets/textures/padrao_chao.jpg")    # não tem chão padrão :D
 
         self.gerar_fase()
 
@@ -40,7 +50,8 @@ class Mapa:
                 continue
 
             if col < 4 or col > tamanho_fase - 4 or random.random() > chance_buraco:
-                self.obstacles.append(Obstaculo(x, y_chao, self.tile_size, self.tile_size, (0.3, 0.3, 0.3)))
+                # Substituímos o Obstaculo cinza pelo ChaoTexturizado
+                self.obstacles.append(ChaoTexturizado(x, y_chao, self.tile_size, self.tile_size, self.tex_path))
 
                 if 4 < col < tamanho_fase - 4:
 
