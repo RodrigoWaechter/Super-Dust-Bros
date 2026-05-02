@@ -62,3 +62,65 @@ class ExplosaoVisual:
             glVertex2f(vx, vy)
 
         glEnd()
+
+
+class FogoChao:
+    """
+    Representa a poça de fogo gerada pela Molotov ao quebrar no chão.
+    """
+
+    def __init__(self, x, y, largura=1.5):
+        self.centro_x = x
+        self.centro_y = y
+        self.largura = largura
+        self.altura = 0.25  # Altura base das chamas
+
+        self.tempo_vida = 5.0  # Fica 5 segundos queimando o chão
+        self.tempo_passado = 0.0
+        self.destruir = False
+
+        # Variável para animar a oscilação do fogo
+        self.tempo_animacao = 0.0
+
+    def update(self, dt):
+        self.tempo_passado += dt
+        self.tempo_animacao += dt * 15.0  # Velocidade da "tremulação" do fogo
+
+        if self.tempo_passado >= self.tempo_vida:
+            self.destruir = True
+
+    def draw(self, camera_x=0.0):
+        # O fogo começa totalmente visível, mas no último segundo ele apaga suavemente
+        alpha = 1.0
+        tempo_restante = self.tempo_vida - self.tempo_passado
+        if tempo_restante < 1.0:
+            alpha = tempo_restante
+
+        if alpha <= 0:
+            alpha = 0
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        x = self.centro_x - camera_x
+        y = self.centro_y
+
+        half_w = self.largura / 2.0
+
+        # Oscila a altura do fogo usando a função seno para parecer orgânico
+        altura_dinamica = self.altura + (math.sin(self.tempo_animacao) * 0.05)
+
+        # Desenha o tapete de fogo no chão
+        glBegin(GL_QUADS)
+
+        # Base do fogo (mais avermelhada e opaca)
+        glColor4f(0.8, 0.1, 0.0, alpha * 0.9)
+        glVertex2f(x - half_w, y)
+        glVertex2f(x + half_w, y)
+
+        # Topo do fogo (mais amarelado e um pouco mais transparente)
+        glColor4f(1.0, 0.6, 0.0, alpha * 0.6)
+        glVertex2f(x + half_w, y + altura_dinamica)
+        glVertex2f(x - half_w, y + altura_dinamica)
+
+        glEnd()
