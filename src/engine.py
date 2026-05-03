@@ -48,7 +48,7 @@ class GameEngine:
         self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
         self.inimigos = self.mapa_atual.inimigos
 
-        # Estado do jogo: "menu" ou "jogo"
+        # Estado do jogo: "menu", "jogo" ou "game_over"
         self.estado = "menu"
 
         # Listas de entidades dinâmicas
@@ -127,6 +127,17 @@ class GameEngine:
             if glfw.get_key(self.window, glfw.KEY_ENTER) == glfw.PRESS:
                 self.estado = "jogo"
                 self.hud.start_timer()
+                self.last_time = glfw.get_time()
+            return
+
+        # Controle da tela de game over
+        if self.estado == "game_over":
+            if glfw.get_key(self.window, glfw.KEY_ENTER) == glfw.PRESS:
+                self.reiniciar_jogo()
+                self.estado = "jogo"
+                self.last_time = glfw.get_time()
+            elif glfw.get_key(self.window, glfw.KEY_ESCAPE) == glfw.PRESS:
+                glfw.set_window_should_close(self.window, True)
             return
 
         # Reset da velocidade horizontal
@@ -170,7 +181,7 @@ class GameEngine:
         Atualiza o estado do jogo a cada frame.
         Inclui física, colisões, IA e lógica geral.
         """
-        if self.estado == "menu":
+        if self.estado in ("menu", "game_over"):
             return
 
         # Cálculo do tempo entre frames
@@ -242,15 +253,31 @@ class GameEngine:
         self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
         self.inimigos = self.mapa_atual.inimigos
 
-        self.player.vidas = 100
+        self.player.vidas = self.settings.player_vidas
         self.player.reset_posicao()
+        self.player.invulneravel_tempo = 0
 
         self.camera_x = 0.0
         self.power_ups_ativos.clear()
         self.projeteis.clear()
+        self.explosoes_visuais.clear()
+        self.mouse_pressed = False
+        self.mouse_right_pressed = False
+        self.em_transicao = False
 
         self.hud.reset_timer()
         self.load_backgrounds()
+
+    def entrar_game_over(self):
+        """
+        Coloca o jogo em estado de game over sem reiniciar imediatamente.
+        """
+        if self.estado == "game_over":
+            return
+
+        self.estado = "game_over"
+        self.player.vel_x = 0
+        self.player.vel_y = 0
 
     def handle_player_physics_x(self, dt):
         """
@@ -321,7 +348,8 @@ class GameEngine:
             if self.player.check_collision(inimigo) and self.player.invulneravel_tempo <= 0:
                 self.player.tomar_dano(20)
                 if self.player.vidas <= 0:
-                    self.reiniciar_jogo()
+                    self.entrar_game_over()
+                    return
 
             # Inimigo atirador
             if isinstance(inimigo, InimigoAtirador):
@@ -352,7 +380,8 @@ class GameEngine:
                         self.player.tomar_dano(15)
 
                         if self.player.vidas <= 0:
-                            self.reiniciar_jogo()
+                            self.entrar_game_over()
+                            return
 
             # Remove explosão finalizada
             if exp.destruir:
@@ -423,7 +452,7 @@ class GameEngine:
                         self.projeteis.remove(proj)
 
                     if self.player.vidas <= 0:
-                        self.reiniciar_jogo()
+                        self.entrar_game_over()
                     break
 
     def handle_power_up_block(self, obj):
@@ -502,11 +531,11 @@ class GameEngine:
                 self.player.invulneravel_tempo = 2.0
                 self.camera_x = 0.0
             else:
-                self.reiniciar_jogo()
+                self.entrar_game_over()
 
         # Tempo esgotado
         if self.hud.is_time_up() or self.player.vidas <= 0:
-            self.reiniciar_jogo()
+            self.entrar_game_over()
 
     def render(self):
         """
@@ -514,6 +543,11 @@ class GameEngine:
         """
         if self.estado == "menu":
             self.hud.draw_menu(self.bg_layers)
+            glfw.swap_buffers(self.window)
+            return
+
+        if self.estado == "game_over":
+            self.hud.draw_game_over(self.bg_layers)
             glfw.swap_buffers(self.window)
             return
 
