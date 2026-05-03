@@ -9,7 +9,8 @@ class HUD:
 
     # Chamadas de desenho da hud
     def draw(self, player, mundo, fase):
-        self.draw_health_bar(player.vidas)
+        # Agora passamos o objeto 'player' inteiro para a barra de vida
+        self.draw_health_bar(player)
         self.draw_number(player.vidas, -0.54, 0.85)
         self.draw_timer()
         self.draw_world_stage(mundo, fase)
@@ -209,8 +210,17 @@ class HUD:
             self.draw_digit(char, x + i * spacing, y, size)
 
     # Métodos da barra de vida
-    def draw_health_bar(self, vida):
-        percentual = vida / 100
+    def draw_health_bar(self, player):
+        # Descobre a vida máxima. Se o player tiver 'settings', usa o valor de lá; senão, usa 100.
+        vida_maxima = 100
+        if hasattr(player, 'settings'):
+            vida_maxima = getattr(player.settings, 'player_vidas', 100)
+
+        # Calcula o percentual
+        percentual = player.vidas / vida_maxima
+
+        # Trava o percentual entre 0.0 (0%) e 1.0 (100%) para a barra não vazar da tela
+        percentual = max(0.0, min(percentual, 1.0))
 
         x = -0.95
         y = 0.85
