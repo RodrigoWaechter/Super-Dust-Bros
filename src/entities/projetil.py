@@ -5,21 +5,68 @@ from OpenGL.GL import *
 
 class Projetil(GameObject):
     """
-    Projétil padrão em linha reta (usado pela AK-47 e Inimigos).
+    Projétil padrão em linha reta (AK-47 / AWP).
     """
 
     def __init__(self, x, y, direcao, origem="player", speed=0.9):
-        super().__init__(x, y, 0.03, 0.03, (1.0, 1.0, 0.0))
+        # aumanta levemente o tamanho (0.1, 0.05) para o sprite da munição aparecer bem
+        super().__init__(x, y, 0.1, 0.05, (1.0, 1.0, 1.0))
         self.vel_x = speed * direcao
+        self.direcao = direcao  # necessário para o espelhamento (direita/esquerda) do sprite
         self.start_x = x
         self.max_distance = 0.8
         self.destruir = False
         self.origem = origem
+        self.texture = None
 
     def update(self, delta_time):
         self.centro_x += self.vel_x * delta_time
         if abs(self.centro_x - self.start_x) >= self.max_distance:
             self.destruir = True
+
+    def draw(self, camera_x=0.0):
+        if self.texture is None:
+            self.texture = load_texture("assets/bullets/municao.png")[0]
+
+        glEnable(GL_TEXTURE_2D)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glColor3f(1.0, 1.0, 1.0)
+
+        x = self.centro_x - camera_x
+        y = self.centro_y
+        half_w = self.width / 2
+        half_h = self.height / 2
+
+        glPushMatrix()
+        glTranslatef(x, y, 0.0)
+
+        glBegin(GL_QUADS)
+        # Se a direcao for 1 (direita), usa o padrão. Se -1 (esquerda), inverte as coordenadas X da textura
+        if self.direcao == 1:
+            glTexCoord2f(0, 1);
+            glVertex2f(-half_w, -half_h)
+            glTexCoord2f(1, 1);
+            glVertex2f(half_w, -half_h)
+            glTexCoord2f(1, 0);
+            glVertex2f(half_w, half_h)
+            glTexCoord2f(0, 0);
+            glVertex2f(-half_w, half_h)
+        else:
+            glTexCoord2f(1, 1);
+            glVertex2f(-half_w, -half_h)
+            glTexCoord2f(0, 1);
+            glVertex2f(half_w, -half_h)
+            glTexCoord2f(0, 0);
+            glVertex2f(half_w, half_h)
+            glTexCoord2f(1, 0);
+            glVertex2f(-half_w, half_h)
+        glEnd()
+
+        glPopMatrix()
+        glDisable(GL_TEXTURE_2D)
 
 
 class GranadaAtiva(GameObject):
