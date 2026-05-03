@@ -81,7 +81,7 @@ sudo apt update && sudo apt install python3-venv -y
 1. Clone o repositório:
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/RodrigoWaechter/Super-Dust-Bros.git
 cd Super-Dust-Bros
 ```
 
@@ -113,7 +113,7 @@ python3 -m src.main
 1. Clone o repositório e entre na pasta
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone https://github.com/RodrigoWaechter/Super-Dust-Bros.git
 cd Super-Dust-Bros
 ```
 
