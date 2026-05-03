@@ -107,7 +107,7 @@ No Windows:
 4. Instale as dependências usadas pelo código:
 
 ```bash
-pip install pyopengl glfw pillow
+pip install -r requirements.txt
 ```
 
 5. Execute o jogo a partir da raiz do projeto:
