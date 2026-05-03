@@ -242,7 +242,7 @@ class GameEngine:
                 for inimigo in self.inimigos[:]:
                     # Checagem de colisão manual simplificada: o inimigo está dentro da largura do fogo?
                     if abs(inimigo.centro_x - exp.centro_x) < (exp.largura / 2) + (inimigo.width / 2):
-                        # O inimigo está próximo à base (altura) do fogo?
+                        # Verifica se o inimigo está próximo à base (altura) do fogo
                         if abs(inimigo.centro_y - exp.centro_y) < (inimigo.height / 2) + 0.2:
                             self.inimigos.remove(inimigo)
                             print("Inimigo queimado pela Molotov!")
@@ -421,6 +421,46 @@ class GameEngine:
     def quebrar_molotov(self, molotov):
         print("A molotov quebrou e espalhou fogo!")
 
-        # O fogo nasce onde a garrafa quebrou, e dura alguns segundos no chão
-        fogo = FogoChao(molotov.centro_x, molotov.centro_y, largura=1.5)
-        self.explosoes_visuais.append(fogo)
+        # Largura total que o fogo vai tentar atingir (4.0 é equivalente a uns 4 blocos)
+        largura_desejada = 0.5
+        fogo_x = molotov.centro_x
+
+        # Limites máximos onde o fogo quer chegar na esquerda e na direita
+        fogo_esq_max = fogo_x - (largura_desejada / 2.0)
+        fogo_dir_max = fogo_x + (largura_desejada / 2.0)
+
+        # Descobre a altura Y exata do chão onde a garrafa bateu
+        chao_y = -9999.0
+        for obj in self.mapa_atual.obstacles:
+            # Se o centro da molotov bateu na reta horizontal deste bloco
+            if obj.canto_inf_esq_x <= fogo_x <= obj.canto_inf_dir_x:
+                # Se bateu no topo dele (ou um pouco abaixo por causa da quina)
+                if obj.canto_sup_esq_y <= molotov.centro_y + 0.2:
+                    if obj.canto_sup_esq_y > chao_y:
+                        chao_y = obj.canto_sup_esq_y
+
+        # Se bateu no nada (caiu do mapa, por exemplo), cancela
+        if chao_y == -9999.0:
+            return
+
+        # Espalha o fogo por todos os blocos que estão nessa mesma altura Y
+        margem_altura = 0.1  # Margem para garantir que pegamos os blocos alinhados
+
+        for obj in self.mapa_atual.obstacles:
+            # Verifica se este bloco forma um "chão" na mesma altura de onde a molotov quebrou
+            if abs(obj.canto_sup_esq_y - chao_y) <= margem_altura:
+
+                # Verifica se há interseção entre a largura do fogo e a largura deste bloco
+                if obj.canto_inf_dir_x > fogo_esq_max and obj.canto_inf_esq_x < fogo_dir_max:
+
+                    # Corta um "pedaço" do fogo para caber perfeitamente em cima DESTE bloco
+                    pedaco_esq = max(fogo_esq_max, obj.canto_inf_esq_x)
+                    pedaco_dir = min(fogo_dir_max, obj.canto_inf_dir_x)
+
+                    largura_pedaco = pedaco_dir - pedaco_esq
+
+                    # Se sobrou espaço útil, cria o fogo em cima dele!
+                    if largura_pedaco > 0:
+                        centro_pedaco = pedaco_esq + (largura_pedaco / 2.0)
+                        fogo = FogoChao(centro_pedaco, obj.canto_sup_esq_y, largura=largura_pedaco)
+                        self.explosoes_visuais.append(fogo)

@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 import time
 
+
 class HUD:
     def __init__(self):
         self.limit = 120
@@ -12,8 +13,9 @@ class HUD:
         self.draw_number(player.vidas, -0.54, 0.85)
         self.draw_timer()
         self.draw_world_stage(mundo, fase)
-        if getattr(player, 'tem_granada', False):
-            self.draw_grenade_indicator()
+
+        # Chama a função de arremessáveis passando o player
+        self.draw_arremessaveis_hud(player)
 
     def draw_world_stage(self, mundo, fase):
         texto = f"{mundo}-{fase}"
@@ -33,32 +35,83 @@ class HUD:
             else:
                 self.draw_digit(char, x + i * spacing, y, size)
 
-    def draw_grenade_indicator(self):
+    def draw_arremessaveis_hud(self, player):
         """
-        Desenha um ícone minimalista roxo (uma granada) abaixo da barra de vida.
+        Desenha os ícones minimalistas da Granada e da Molotov abaixo da barra de vida.
+        Acende (colore) apenas o que estiver equipado no momento.
         """
-        x = -0.95
-        y = 0.72  # Posicionado logo abaixo da barra de vida
+        # Verifica o estado do inventário do jogador usando getattr por segurança
+        tem_arremessavel = getattr(player, 'tem_arremessavel', False)
+        tipo = getattr(player, 'tipo_arremessavel', None)
+
+        tem_granada = tem_arremessavel and tipo == "GRANADA"
+        tem_molotov = tem_arremessavel and tipo == "MOLOTOV"
+
+        # Dimensões base usadas para os dois ícones
+        y = 0.72
         largura = 0.04
         altura = 0.05
 
-        # Corpo da Granada (Roxo)
-        glColor3f(0.5, 0.0, 0.5)
+
+        # 1. DESENHA A GRANADA
+
+        x_g = -0.95
+
+        # Define as cores dependendo se tem a granada ou não
+        cor_corpo_g = (0.5, 0.0, 0.5) if tem_granada else (0.2, 0.2, 0.2)  # Roxo ou Cinza escuro
+        cor_pino_g = (0.7, 0.7, 0.7) if tem_granada else (0.3, 0.3, 0.3)  # Cinza claro ou Cinza escuro
+
+        # Corpo da Granada
+        glColor3f(*cor_corpo_g)
         glBegin(GL_QUADS)
-        glVertex2f(x, y)
-        glVertex2f(x + largura, y)
-        glVertex2f(x + largura, y + altura)
-        glVertex2f(x, y + altura)
+        glVertex2f(x_g, y)
+        glVertex2f(x_g + largura, y)
+        glVertex2f(x_g + largura, y + altura)
+        glVertex2f(x_g, y + altura)
         glEnd()
 
-        # Pino da Granada (Cinza)
-        glColor3f(0.7, 0.7, 0.7)
+        # Pino da Granada
+        glColor3f(*cor_pino_g)
         glBegin(GL_QUADS)
-        glVertex2f(x + largura * 0.3, y + altura)
-        glVertex2f(x + largura * 0.7, y + altura)
-        glVertex2f(x + largura * 0.7, y + altura + 0.02)
-        glVertex2f(x + largura * 0.3, y + altura + 0.02)
+        glVertex2f(x_g + largura * 0.3, y + altura)
+        glVertex2f(x_g + largura * 0.7, y + altura)
+        glVertex2f(x_g + largura * 0.7, y + altura + 0.02)
+        glVertex2f(x_g + largura * 0.3, y + altura + 0.02)
         glEnd()
+
+
+        # 2. DESENHA A MOLOTOV
+
+        # Posiciona a Molotov ao lado da granada
+        x_m = x_g + largura + 0.03
+
+        # Define as cores dependendo se tem a molotov ou não
+        cor_corpo_m = (1.0, 0.4, 0.0) if tem_molotov else (0.2, 0.2, 0.2)  # Laranja ou Cinza escuro
+        cor_pano_m = (1.0, 0.9, 0.6) if tem_molotov else (0.3, 0.3, 0.3)  # Amarelinho ou Cinza escuro
+
+        # Corpo da Garrafa (Laranja)
+        glColor3f(*cor_corpo_m)
+        glBegin(GL_QUADS)
+        glVertex2f(x_m, y)
+        glVertex2f(x_m + largura, y)
+        glVertex2f(x_m + largura, y + altura)
+        glVertex2f(x_m, y + altura)
+        glEnd()
+
+        # Pano em chamas / Gargalo da garrafa
+        glColor3f(*cor_pano_m)
+        glBegin(GL_QUADS)
+        glVertex2f(x_m + largura * 0.3, y + altura)
+        glVertex2f(x_m + largura * 0.7, y + altura)
+        glVertex2f(x_m + largura * 0.7, y + altura + 0.03)  # Um pouco mais alto que o pino
+        glVertex2f(x_m + largura * 0.3, y + altura + 0.03)
+        glEnd()
+
+
+        # Limpeza
+
+        # Retorna para a cor branca padrão para não manchar o resto do jogo
+        glColor3f(1.0, 1.0, 1.0)
 
     def draw_menu(self, bg_layers):
         glClearColor(0.5, 0.8, 0.9, 1.0)
@@ -133,8 +186,6 @@ class HUD:
 
     def get_time(self):
         elapsed_time = int(time.time() - self.start_time)
-       # print(self.start_time)
-       # print(elapsed_time)
         remaining_time = max(0, self.limit - elapsed_time)
         return remaining_time
 
