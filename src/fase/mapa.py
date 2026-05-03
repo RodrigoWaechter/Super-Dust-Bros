@@ -86,7 +86,7 @@ class Mapa:
         x_fim = -1 + (tamanho_fase - 2) * self.tile_size
         y_fim = -1.0 + self.tile_size
 
-        self.objetivo = Obstaculo(x_fim, y_fim, self.tile_size * 2, self.tile_size * 2,(0.8, 0.1, 0.1))
+        self.objetivo = Obstaculo(x_fim, y_fim, self.tile_size * 2, self.tile_size * 2,texture_path="assets/texturas_obstaculos/badfallen.png")
 
     def calcular_dificuldade(self):
         return (self.mundo - 1) * 3 + self.fase
