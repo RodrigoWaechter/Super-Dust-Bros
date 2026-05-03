@@ -329,17 +329,30 @@ class GameEngine:
 
     def handle_explosoes(self, dt):
         """
-        Atualiza efeitos de explosão e aplica dano em área.
+        Atualiza efeitos de explosão e aplica dano em área no fogo,
+        afetando inimigos e o jogador.
         """
         for exp in self.explosoes_visuais[:]:
             exp.update(dt)
 
-            # Fogo contínuo no chão
+            # Fogo contínuo no chão (Molotov)
             if isinstance(exp, FogoChao):
+                # Dano nos inimigos
                 for inimigo in self.inimigos[:]:
                     if abs(inimigo.centro_x - exp.centro_x) < (exp.largura / 2) + (inimigo.width / 2):
                         if abs(inimigo.centro_y - exp.centro_y) < (inimigo.height / 2) + 0.2:
                             self.inimigos.remove(inimigo)
+
+                # NOVO: Dano no próprio jogador se pisar no fogo!
+                if abs(self.player.centro_x - exp.centro_x) < (exp.largura / 2) + (self.player.width / 2):
+                    if abs(self.player.centro_y - exp.centro_y) < (self.player.height / 2) + 0.2:
+                        # Dano menor, pois se ele ficar parado, vai tomar várias vezes.
+                        # (O seu sistema de invulnerabilidade de 1s que configuramos no player
+                        # impede que a vida derreta instantaneamente!)
+                        self.player.tomar_dano(15)
+
+                        if self.player.vidas <= 0:
+                            self.reiniciar_jogo()
 
             # Remove explosão finalizada
             if exp.destruir:
@@ -352,34 +365,57 @@ class GameEngine:
         for proj in self.projeteis[:]:
             proj.update(dt)
 
-            # Verifica se deve ser destruído
+            # Verifica se deve ser destruído (ex: tempo acabou)
             if getattr(proj, 'destruir', False):
                 if isinstance(proj, GranadaAtiva):
                     self.explodir_granada(proj)
                 elif isinstance(proj, MolotovAtiva):
                     self.quebrar_molotov(proj)
-                self.projeteis.remove(proj)
+
+                if proj in self.projeteis:
+                    self.projeteis.remove(proj)
                 continue
 
             # Colisão com cenário
+            bateu_no_cenario = False
             for obj in self.mapa_atual.obstacles:
                 if proj.check_collision(obj):
                     if isinstance(proj, GranadaAtiva):
                         self.explodir_granada(proj)
                     elif isinstance(proj, MolotovAtiva):
                         self.quebrar_molotov(proj)
-                    self.projeteis.remove(proj)
+
+                    if proj in self.projeteis:
+                        self.projeteis.remove(proj)
+
+                    bateu_no_cenario = True
                     break
 
-            # Dano
+            # Se já bateu na parede/chão e sumiu, não precisa checar inimigos
+            if bateu_no_cenario:
+                continue
+
+            # Dano direto nos inimigos
             if proj.origem == "player":
                 for inimigo in self.inimigos[:]:
                     if proj.check_collision(inimigo):
+
+                        # AQUI ESTÁ A CORREÇÃO:
+                        # Se for Granada ou Molotov, aciona o efeito na cara do inimigo antes de sumir!
+                        if isinstance(proj, GranadaAtiva):
+                            self.explodir_granada(proj)
+                        elif isinstance(proj, MolotovAtiva):
+                            self.quebrar_molotov(proj)
+
+                        # Remove o inimigo atingido
                         self.inimigos.remove(inimigo)
+
+                        # Remove o projétil da tela
                         if proj in self.projeteis:
                             self.projeteis.remove(proj)
                         break
 
+            # Dano no jogador (caso inimigos atirem)
             elif proj.origem == "inimigo":
                 if proj.check_collision(self.player) and self.player.invulneravel_tempo <= 0:
                     self.player.tomar_dano(30)
@@ -428,9 +464,19 @@ class GameEngine:
                     self.player.tem_arremessavel = True
                     self.player.tipo_arremessavel = "MOLOTOV"
 
+                # Lógica para pegar o item de Cura (Heal)
+                elif tipo_item == "ItemCura":
+                    # Usa o valor do settings, ou 100 como padrão para evitar erros
+                    self.player.vidas = getattr(self.settings, 'player_vidas', 100)
+
+                    # Garante 1 segundo de invulnerabilidade após curar
+                    self.player.invulneravel_tempo = 1.0
+                    print("Vida restaurada ao máximo!")
+
                 else:
                     self.player.tem_item = True
 
+                # Remove o item da tela após ser coletado
                 self.power_ups_ativos.remove(p_up)
 
     def update_camera(self):
@@ -520,7 +566,8 @@ class GameEngine:
 
     def explodir_granada(self, granada):
         """
-        Cria explosão de granada e aplica dano em área.
+        Cria explosão de granada e aplica dano em área, tanto em inimigos
+        quanto no próprio jogador (fogo amigo ativado).
         """
         efeito = ExplosaoVisual(
             granada.centro_x,
@@ -530,12 +577,27 @@ class GameEngine:
 
         self.explosoes_visuais.append(efeito)
 
+        # Dano em área nos inimigos
         for inimigo in self.inimigos[:]:
             if math.sqrt(
-                (inimigo.centro_x - granada.centro_x) ** 2 +
-                (inimigo.centro_y - granada.centro_y) ** 2
+                    (inimigo.centro_x - granada.centro_x) ** 2 +
+                    (inimigo.centro_y - granada.centro_y) ** 2
             ) <= granada.raio_explosao:
                 self.inimigos.remove(inimigo)
+
+        # NOVO: Dano em área no próprio jogador!
+        distancia_player = math.sqrt(
+            (self.player.centro_x - granada.centro_x) ** 2 +
+            (self.player.centro_y - granada.centro_y) ** 2
+        )
+
+        if distancia_player <= granada.raio_explosao:
+            # O dano da granada costuma ser alto. Coloquei 40, mas você pode ajustar.
+            self.player.tomar_dano(40)
+
+            # Verifica se o jogador morreu na própria explosão
+            if self.player.vidas <= 0:
+                self.reiniciar_jogo()
 
     def quebrar_molotov(self, molotov):
         """

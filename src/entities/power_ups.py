@@ -4,7 +4,6 @@ from src.entities.game_object import GameObject
 from src.utils import load_texture
 from OpenGL.GL import *
 
-
 class power_ups(GameObject):
     """
     Representa a AK-47 que surge ao abrir uma caixa.
@@ -66,6 +65,67 @@ class power_ups(GameObject):
         glEnd()
         glDisable(GL_TEXTURE_2D)
 
+class ItemCura(GameObject):
+    """
+    Representa o Kit de Cura que surge ao abrir uma caixa.
+    """
+
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height, (1.0, 1.0, 1.0))
+
+        self.vel_x = 0.0
+        self.vel_y = 0.0
+        self.gravity = -2.5
+        self.texture = None
+
+        self.is_spawnning = True
+        self.spawn_speed = 0.5
+        self.spawn_target_y = y + height
+        self.no_chao = False
+
+    def update(self, dt):
+        if self.is_spawnning:
+            self.centro_y += self.spawn_speed * dt
+            if self.centro_y >= self.spawn_target_y:
+                self.is_spawnning = False
+                self.centro_y = self.spawn_target_y
+        else:
+            self.vel_y += self.gravity * dt
+            self.centro_x += self.vel_x * dt
+            self.centro_y += self.vel_y * dt
+
+    def draw(self, camera_x=0.0):
+        if self.texture is None:
+            self.texture = load_texture("assets/power_ups/power-up-cura.png")[0]
+
+        glEnable(GL_TEXTURE_2D)
+
+        # Habilita suporte a fundo transparente (PNG)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glBindTexture(GL_TEXTURE_2D, self.texture)
+        glColor3f(1.0, 1.0, 1.0)
+
+        escala = 1.15
+
+        x = self.centro_x - camera_x
+        y = self.centro_y
+        half_w = (self.width / 2) * escala
+        half_h = (self.height / 2) * escala
+
+        glBegin(GL_QUADS)
+        glTexCoord2f(0, 1)
+        glVertex2f(x - half_w, y - half_h)
+        glTexCoord2f(1, 1)
+        glVertex2f(x + half_w, y - half_h)
+        glTexCoord2f(1, 0)
+        glVertex2f(x + half_w, y + half_h)
+        glTexCoord2f(0, 0)
+        glVertex2f(x - half_w, y + half_h)
+        glEnd()
+
+        glDisable(GL_TEXTURE_2D)
 
 class ItemGranada(GameObject):
 
@@ -241,15 +301,20 @@ class blocoPowerUp(GameObject):
     def baterPorBaixo(self):
         if not self.foiAtingido:
             self.foiAtingido = True
+            # Muda a cor do bloco para indicar que já foi usado
             self.color = (0.4, 0.4, 0.4)
 
-            opcoes_de_itens = ["AK47", "GRANADA", "MOLOTOV"]
+            # Adicionamos a "CURA" na lista de possibilidades
+            opcoes_de_itens = ["AK47", "GRANADA", "MOLOTOV", "CURA"]
             item_sorteado = random.choice(opcoes_de_itens)
 
             if item_sorteado == "GRANADA":
                 return ItemGranada(self.centro_x, self.centro_y, self.width, self.height)
             elif item_sorteado == "MOLOTOV":
                 return ItemMolotov(self.centro_x, self.centro_y, self.width, self.height)
+            elif item_sorteado == "CURA":
+                # AGORA CORRIGIDO: Passando a largura e altura do bloco para o item nascer proporcional
+                return ItemCura(self.centro_x, self.centro_y, self.width, self.height)
             else:
                 return power_ups(self.centro_x, self.centro_y, self.width, self.height)
 
