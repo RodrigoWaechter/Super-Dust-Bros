@@ -57,7 +57,8 @@ class Mapa:
                 buraco_restante -= 1
                 continue
 
-            if col < 4 or col > tamanho_fase - 4 or random.random() > chance_buraco:
+            # ALTERAÇÃO: Mudamos de col < 4 para col < 5 para garantir um spawn mais seguro
+            if col < 5 or col > tamanho_fase - 4 or random.random() > chance_buraco:
                 # substituímos o obstaculo cinza pelo chao texturizado
                 self.obstacles.append(ChaoTexturizado(x, y_chao, self.tile_size, self.tile_size, self.tex_path))
 

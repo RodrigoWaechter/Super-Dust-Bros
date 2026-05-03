@@ -188,6 +188,7 @@ class Player(Personagem):
 
             if self.vidas <= 0:
                 self.vidas = 0
+                print(f"Vida atual: {self.vidas}")
                 self.morrer()
 
     def reset_posicao(self):

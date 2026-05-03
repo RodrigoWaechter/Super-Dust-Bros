@@ -9,7 +9,7 @@ class Settings:
         self.move_speed = 1.2
 
         self.player_start_x = -0.9
-        self.player_start_y = -0.5
+        self.player_start_y = 0.0
         self.player_width = 0.17
         self.player_height = 0.27
         self.player_vidas = 100
