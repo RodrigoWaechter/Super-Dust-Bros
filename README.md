@@ -3,6 +3,8 @@
 Um jogo 2D de plataforma com ação, tiro e itens arremessáveis, inspirado na estrutura clássica de **Super Mario Bros** com estética e elementos de **Counter-Strike**.
 Foi desenvolvido como projeto da disciplina de **Computação Gráfica**, explorando renderização, animação, colisão e loop de jogo com OpenGL.
 
+<img width="805" height="638" alt="image" src="https://github.com/user-attachments/assets/9266aeea-b6e5-4d55-ab42-9634b1dd2bae" />
+
 ## Descrição do projeto
 
 **Super Dust Bros** é um jogo de plataforma lateral em que o jogador atravessa fases, desvia de buracos, enfrenta inimigos e coleta itens para avançar pelo mapa.
@@ -12,6 +14,8 @@ A proposta mistura duas referências bem claras:
 
 - **Super Mario Bros** na estrutura de plataforma 2D, pulo, progressão por fases e blocos de item
 - **Counter-Strike** na identidade visual, nos cenários inspirados em mapas clássicos e nos itens como AK-47, granada, molotov e cura
+
+<img width="810" height="643" alt="image" src="https://github.com/user-attachments/assets/3ee4be62-bd51-41b4-9437-bcbb46867968" />
 
 Do ponto de vista acadêmico, o projeto foi criado para aplicar conceitos de **computação gráfica** em um jogo jogável, incluindo:
 
@@ -66,10 +70,13 @@ Do ponto de vista acadêmico, o projeto foi criado para aplicar conceitos de **c
 
 - Python 3 instalado
 - Ambiente gráfico disponível
-
+- Apenas para Linux: Sistemas baseados em Debian/Ubuntu precisam do pacote de ambiente virtual instalado manualmente:
+```bash
+sudo apt update && sudo apt install python3-venv -y
+```
 > Observação: o jogo abre uma janela com GLFW/OpenGL. Em ambientes sem interface gráfica, como alguns servidores, terminais remotos ou containers headless, a execução pode falhar.
 
-### Passo a passo
+### Passo a passo no *Linux*
 
 1. Clone o repositório:
 
@@ -84,24 +91,10 @@ cd Super-Dust-Bros
 python3 -m venv .venv
 ```
 
-No Windows, se `python3` não estiver disponível:
-
-```bash
-py -m venv .venv
-```
-
 3. Ative o ambiente virtual:
-
-No Linux/macOS:
 
 ```bash
 source .venv/bin/activate
-```
-
-No Windows:
-
-```bash
-.venv\Scripts\activate
 ```
 
 4. Instale as dependências usadas pelo código:
@@ -115,8 +108,34 @@ pip install -r requirements.txt
 ```bash
 python3 -m src.main
 ```
+### Passo a passo no *Windows*
 
-No Windows, se preferir:
+1. Clone o repositório e entre na pasta
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd Super-Dust-Bros
+```
+
+2. Crie um ambiente virtual:
+
+```bash
+py -m venv .venv
+```
+
+3. Ative o ambiente virtual:
+
+```bash
+.venv\Scripts\activate
+```
+
+4. Instale as dependências usadas pelo código:
+
+```bash
+pip install -r requirements.txt
+```
+
+5. Execute o jogo a partir da raiz do projeto:
 
 ```bash
 py -m src.main
