@@ -63,11 +63,14 @@ class GameEngine:
 
     def init_window(self):
         """
-        Inicializa o contexto gráfico utilizando GLFW e configura
-        o sistema de projeção ortográfica 2D padrão do OpenGL.
+        Inicializa a janela gráfica utilizando GLFW
+        e configura o sistema de projeção ortográfica.
         """
         if not glfw.init():
             raise Exception("Erro GLFW")
+
+        # Garante que a janela permite ser redimensionada pelo usuário
+        glfw.window_hint(glfw.RESIZABLE, glfw.TRUE)
 
         self.window = glfw.create_window(
             self.settings.window_width,
@@ -79,16 +82,71 @@ class GameEngine:
 
         glfw.make_context_current(self.window)
 
-        # Ativa V-Sync (sincronização com taxa de atualização do monitor)
-        glfw.swap_interval(1)
+        # Diz ao GLFW para chamar a nossa função quando a janela mudar
+        glfw.set_framebuffer_size_callback(self.window, self.redimensionar_janela)
 
+        # Ativa V-Sync
+        glfw.swap_interval(1)
         self.last_time = glfw.get_time()
 
-        # Configuração da projeção 2D (Coordenadas normalizadas de -1 a 1)
+        # Força uma primeira configuração do tamanho da tela
+        self.redimensionar_janela(self.window, self.settings.window_width, self.settings.window_height)
+
+    def redimensionar_janela(self, window, width, height):
+        """
+        Ajusta a área de renderização do OpenGL para manter a proporção
+        original do jogo, adicionando barras pretas (letterboxing) se necessário,
+        para evitar que a imagem fique esticada.
+        """
+        if height == 0:
+            height = 1  # Evita erro de divisão por zero se minimizar
+
+        # Calcula a proporção original do jogo (ex: 800 / 600 = 1.333)
+        target_aspect = self.settings.window_width / self.settings.window_height
+        window_aspect = width / height
+
+        # Compara as proporções para decidir onde colocar as barras pretas
+        if window_aspect > target_aspect:
+            # Janela é mais larga que o jogo (Barras pretas nas laterais)
+            view_width = int(height * target_aspect)
+            view_height = height
+            view_x = (width - view_width) // 2
+            view_y = 0
+        else:
+            # Janela é mais alta/quadrada que o jogo (Barras pretas em cima/embaixo)
+            view_width = width
+            view_height = int(width / target_aspect)
+            view_x = 0
+            view_y = (height - view_height) // 2
+
+        # Diz ao OpenGL para desenhar apenas dentro da área com a proporção correta
+        glViewport(view_x, view_y, view_width, view_height)
+
+        # A matriz de projeção continua -1 a 1, assim a HUD e física não quebram!
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glOrtho(-1, 1, -1, 1, -1, 1)
         glMatrixMode(GL_MODELVIEW)
+
+    def toggle_fullscreen(self):
+        """
+        Alterna entre Modo Janela e Tela Cheia de forma limpa.
+        """
+        monitor = glfw.get_primary_monitor()
+        mode = glfw.get_video_mode(monitor)
+
+        if not getattr(self, 'is_fullscreen', False):
+            # Salva posição e tamanho atuais antes de maximizar
+            self.old_x, self.old_y = glfw.get_window_pos(self.window)
+            self.old_width, self.old_height = glfw.get_window_size(self.window)
+
+            # Vai para tela cheia
+            glfw.set_window_monitor(self.window, monitor, 0, 0, mode.size.width, mode.size.height, mode.refresh_rate)
+            self.is_fullscreen = True
+        else:
+            # Volta pro modo janela com os tamanhos que estavam salvos
+            glfw.set_window_monitor(self.window, None, self.old_x, self.old_y, self.old_width, self.old_height, 0)
+            self.is_fullscreen = False
 
     def load_backgrounds(self):
         """
@@ -114,6 +172,15 @@ class GameEngine:
         Captura e traduz eventos do sistema (teclado e mouse) para ações
         das entidades, respeitando a máquina de estados (Menu/Jogo/Game_Over).
         """
+        # Controle de Tela Cheia com F11 (Global: funciona no menu, jogo e game over)
+        if glfw.get_key(self.window, glfw.KEY_F11) == glfw.PRESS:
+            # Impede que a tela fique piscando loucamente ao segurar a tecla
+            if not getattr(self, 'f11_pressed', False):
+                self.toggle_fullscreen()
+                self.f11_pressed = True
+        else:
+            self.f11_pressed = False
+
         if self.estado == "menu":
             if glfw.get_key(self.window, glfw.KEY_ENTER) == glfw.PRESS:
                 self.estado = "jogo"

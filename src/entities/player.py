@@ -91,39 +91,56 @@ class Player(Personagem):
             self.tempo_animacao = 0
 
     def draw(self, camera_x=0.0):
-        """Calcula proporções da textura atual e as renderiza orientando os quads horizontalmente."""
         texture, tex_w, tex_h = self.get_sprite_atual()
 
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, texture)
-        glColor3f(1.0, 1.0, 1.0)
+
+        # Lógica de piscar em vermelho ao tomar dano
+        if self.invulneravel_tempo > 0:
+            # O cálculo (tempo * 15) % 2 cria um efeito rápido de "pisca-pisca"
+            if int(self.invulneravel_tempo * 15) % 2 == 0:
+                glColor3f(1.0, 0.0, 0.0)  # Fica Vermelho
+            else:
+                glColor3f(1.0, 1.0, 1.0)  # Fica Normal
+        else:
+            glColor3f(1.0, 1.0, 1.0)  # Normal (100% da cor original da textura)
 
         x = self.centro_x - camera_x + self.sprite_offset_x
         pe_y = self.centro_y - (self.hitbox_height / 2)
+
         aspect = tex_w / tex_h
+
         h = self.render_height / 2
         w = h * aspect
+
         y = pe_y + h + self.sprite_offset_y
 
         glBegin(GL_QUADS)
 
         if self.direcao == 1:
-            glTexCoord2f(0, 1);
+            glTexCoord2f(0, 1)
             glVertex2f(x - w, y - h)
-            glTexCoord2f(1, 1);
+
+            glTexCoord2f(1, 1)
             glVertex2f(x + w, y - h)
-            glTexCoord2f(1, 0);
+
+            glTexCoord2f(1, 0)
             glVertex2f(x + w, y + h)
-            glTexCoord2f(0, 0);
+
+            glTexCoord2f(0, 0)
             glVertex2f(x - w, y + h)
         else:
-            glTexCoord2f(1, 1);
+            glTexCoord2f(1, 1)
             glVertex2f(x - w, y - h)
-            glTexCoord2f(0, 1);
+
+            glTexCoord2f(0, 1)
             glVertex2f(x + w, y - h)
-            glTexCoord2f(0, 0);
+
+            glTexCoord2f(0, 0)
             glVertex2f(x + w, y + h)
-            glTexCoord2f(1, 0);
+
+            glTexCoord2f(1, 0)
             glVertex2f(x - w, y + h)
 
         glEnd()
