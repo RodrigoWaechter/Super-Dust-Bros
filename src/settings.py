@@ -1,3 +1,8 @@
+"""
+settings.py
+Atua como um contêiner global de configuração.
+Centraliza as variáveis vitais de física, dimensões, e atributos base.
+"""
 class Settings:
     def __init__(self):
         self.window_width = 800

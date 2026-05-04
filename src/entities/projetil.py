@@ -5,14 +5,15 @@ from OpenGL.GL import *
 
 class Projetil(GameObject):
     """
-    Projétil padrão em linha reta (AK-47 / AWP).
+    Objeto balístico que se move linearmente com alcance pré-definido.
+    Usado pelas armas do player e inimigo (AK-47 / AWP).
     """
 
     def __init__(self, x, y, direcao, origem="player", speed=0.9):
-        # aumanta levemente o tamanho (0.1, 0.05) para o sprite da munição aparecer bem
+        # A escala é sensivelmente ajustada visualmente em X/Y para o quad da munição
         super().__init__(x, y, 0.1, 0.05, (1.0, 1.0, 1.0))
         self.vel_x = speed * direcao
-        self.direcao = direcao  # necessário para o espelhamento (direita/esquerda) do sprite
+        self.direcao = direcao
         self.start_x = x
         self.max_distance = 0.8
         self.destruir = False
@@ -20,6 +21,7 @@ class Projetil(GameObject):
         self.texture = None
 
     def update(self, delta_time):
+        """Atualiza física linear e controla culling via distância percorrida."""
         self.centro_x += self.vel_x * delta_time
         if abs(self.centro_x - self.start_x) >= self.max_distance:
             self.destruir = True
@@ -44,25 +46,17 @@ class Projetil(GameObject):
         glTranslatef(x, y, 0.0)
 
         glBegin(GL_QUADS)
-        # Se a direcao for 1 (direita), usa o padrão. Se -1 (esquerda), inverte as coordenadas X da textura
+        # Espelha as coordenadas UV baseadas na direção vetor X atual
         if self.direcao == 1:
-            glTexCoord2f(0, 1);
-            glVertex2f(-half_w, -half_h)
-            glTexCoord2f(1, 1);
-            glVertex2f(half_w, -half_h)
-            glTexCoord2f(1, 0);
-            glVertex2f(half_w, half_h)
-            glTexCoord2f(0, 0);
-            glVertex2f(-half_w, half_h)
+            glTexCoord2f(0, 1); glVertex2f(-half_w, -half_h)
+            glTexCoord2f(1, 1); glVertex2f(half_w, -half_h)
+            glTexCoord2f(1, 0); glVertex2f(half_w, half_h)
+            glTexCoord2f(0, 0); glVertex2f(-half_w, half_h)
         else:
-            glTexCoord2f(1, 1);
-            glVertex2f(-half_w, -half_h)
-            glTexCoord2f(0, 1);
-            glVertex2f(half_w, -half_h)
-            glTexCoord2f(0, 0);
-            glVertex2f(half_w, half_h)
-            glTexCoord2f(1, 0);
-            glVertex2f(-half_w, half_h)
+            glTexCoord2f(1, 1); glVertex2f(-half_w, -half_h)
+            glTexCoord2f(0, 1); glVertex2f(half_w, -half_h)
+            glTexCoord2f(0, 0); glVertex2f(half_w, half_h)
+            glTexCoord2f(1, 0); glVertex2f(-half_w, half_h)
         glEnd()
 
         glPopMatrix()
@@ -70,14 +64,18 @@ class Projetil(GameObject):
 
 
 class GranadaAtiva(GameObject):
+    """
+    Entidade balística parabólica acionada por arremesso.
+    Lida com gravidade, raio explosivo customizado e animação de rotação com matrizes.
+    """
     def __init__(self, x, y, direcao, origem="player"):
         super().__init__(x, y, 0.08, 0.08, (1.0, 1.0, 1.0))
 
         self.origem = origem
         self.destruir = False
-        self.texture = None  # lazy loading para a arte
+        self.texture = None
 
-        # Física do arremesso
+        # Vetores de lançamento parabólico e propriedades explosivas
         self.vel_x = 0.8 * direcao
         self.vel_y = 1.2
         self.gravity = -3.0
@@ -85,31 +83,25 @@ class GranadaAtiva(GameObject):
         self.raio_explosao = 0.5
         self.dano = 100
 
-        # Para animação de rotação
         self.rotacao = 0.0
 
     def update(self, delta_time):
-        # Gravidade na velocidade Y
+        """Computa física de lançamento oblíquo e variação rotacional."""
         self.vel_y += self.gravity * delta_time
 
-        # Move a granada nos eixos X e Y
         self.centro_x += self.vel_x * delta_time
         self.centro_y += self.vel_y * delta_time
         self.rotacao += 360.0 * delta_time
 
-        # Diminui o temporizador
         self.tempo_vida -= delta_time
         if self.tempo_vida <= 0:
             self.destruir = True
 
     def draw(self, camera_x=0.0):
-        # granada girando no ar
         if self.texture is None:
             self.texture = load_texture("assets/power_ups/power-up-he.png")[0]
 
         glEnable(GL_TEXTURE_2D)
-
-        # Habilita transparência para o PNG
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -123,34 +115,25 @@ class GranadaAtiva(GameObject):
 
         glPushMatrix()
 
-        # Translada para o centro do objeto
+        # Isolamento do sistema de coordenadas para aplicar rotação centrada no modelo
         glTranslatef(x, y, 0.0)
-
-        # Rotaciona no eixo Z (perpendicular à tela)
         glRotatef(self.rotacao, 0.0, 0.0, 1.0)
 
-        # Desenha o Quad centralizado no (0,0) local
         glBegin(GL_QUADS)
-        # Vértices são relativas ao centro (-half, +half)
-        glTexCoord2f(0, 1)
-        glVertex2f(-half_w, -half_h)
-        glTexCoord2f(1, 1)
-        glVertex2f(half_w, -half_h)
-        glTexCoord2f(1, 0)
-        glVertex2f(half_w, half_h)
-        glTexCoord2f(0, 0)
-        glVertex2f(-half_w, half_h)
+        glTexCoord2f(0, 1); glVertex2f(-half_w, -half_h)
+        glTexCoord2f(1, 1); glVertex2f(half_w, -half_h)
+        glTexCoord2f(1, 0); glVertex2f(half_w, half_h)
+        glTexCoord2f(0, 0); glVertex2f(-half_w, half_h)
         glEnd()
 
-        # Restaura a matriz de transformação original
         glPopMatrix()
-
         glDisable(GL_TEXTURE_2D)
 
 
 class MolotovAtiva(GameObject):
     """
-    Garrafa da Molotov voando pelo ar antes de quebrar.
+    Entidade balística parabólica equivalente à Granada,
+    mas projetada para gerar uma classe FogoChao() ao invés de ExplosaoVisual().
     """
 
     def __init__(self, x, y, direcao, origem="player"):
@@ -160,13 +143,11 @@ class MolotovAtiva(GameObject):
         self.destruir = False
         self.texture = None
 
-        # Física do arremesso idêntica à da Granada
         self.vel_x = 0.8 * direcao
         self.vel_y = 1.2
         self.gravity = -3.0
         self.tempo_vida = 1.5
 
-        # Para animação de rotação
         self.rotacao = 0.0
 
     def update(self, delta_time):
@@ -181,13 +162,10 @@ class MolotovAtiva(GameObject):
             self.destruir = True
 
     def draw(self, camera_x=0.0):
-        # Garrafa girando no ar
         if self.texture is None:
             self.texture = load_texture("assets/power_ups/power-up-molotov.png")[0]
 
         glEnable(GL_TEXTURE_2D)
-
-        # Habilita transparência para o PNG
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -205,16 +183,11 @@ class MolotovAtiva(GameObject):
         glRotatef(self.rotacao, 0.0, 0.0, 1.0)
 
         glBegin(GL_QUADS)
-        glTexCoord2f(0, 1)
-        glVertex2f(-half_w, -half_h)
-        glTexCoord2f(1, 1)
-        glVertex2f(half_w, -half_h)
-        glTexCoord2f(1, 0)
-        glVertex2f(half_w, half_h)
-        glTexCoord2f(0, 0)
-        glVertex2f(-half_w, half_h)
+        glTexCoord2f(0, 1); glVertex2f(-half_w, -half_h)
+        glTexCoord2f(1, 1); glVertex2f(half_w, -half_h)
+        glTexCoord2f(1, 0); glVertex2f(half_w, half_h)
+        glTexCoord2f(0, 0); glVertex2f(-half_w, half_h)
         glEnd()
 
         glPopMatrix()
-
         glDisable(GL_TEXTURE_2D)
