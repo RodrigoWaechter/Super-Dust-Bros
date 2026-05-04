@@ -127,6 +127,19 @@ class HUD:
         if int(time.time() * 2) % 2 == 0:
             self.draw_text("PLAY", -0.1, -0.1, 0.05)
 
+    def draw_game_over(self, bg_layers):
+        glClearColor(0.5, 0.8, 0.9, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
+
+        for layer in bg_layers:
+            layer.draw(0)
+
+        self.draw_text("GAME OVER", -0.45, 0.15, 0.08)
+
+        if int(time.time() * 2) % 2 == 0:
+            self.draw_text("ENTER RESTART", -0.33, 0, 0.04)
+
     # Construção do dígito
     def draw_digit(self, digit, x, y, size):
         segmentos = {
@@ -295,6 +308,26 @@ class HUD:
 
             quad(x + w * 0.3, y + h * 0.5, x + w * 0.4, y + h)
             quad(x + w * 0.6, y + h * 0.5, x + w * 0.7, y + h)
+
+            glEnd()
+            return
+
+        if char == "N":
+            glBegin(GL_QUADS)
+
+            quad(x, y, x + thickness, y + h)
+            quad(x + w - thickness, y, x + w, y + h)
+            quad(x + w * 0.45, y, x + w * 0.55, y + h)
+
+            glEnd()
+            return
+
+        if char == "V":
+            glBegin(GL_QUADS)
+
+            quad(x, y + h * 0.35, x + thickness, y + h)
+            quad(x + w - thickness, y + h * 0.35, x + w, y + h)
+            quad(x + w * 0.45, y, x + w * 0.55, y + h * 0.45)
 
             glEnd()
             return
