@@ -22,21 +22,26 @@ class Mapa:
         self.settings = settings
         self.objetivo = None
 
+        mundo_loop = ((self.mundo - 1) % 4) + 1
+
         self.texturas_chao = {
             1: "assets/texturas_chao/chao-dust2.jpg",
             2: "assets/texturas_chao/chao-mirage.jpg",
-            3: "assets/texturas_chao/chao-cache.jpg"
+            3: "assets/texturas_chao/chao-cache.jpg",
+            4: "assets/texturas_chao/chao-poolday.jpg"
         }
 
-        self.tex_path = self.texturas_chao.get(mundo, "assets/textures/padrao_chao.jpg")
+        # garante que nunca falte textura
+        self.tex_path = self.texturas_chao.get(mundo_loop, "assets/texturas_chao/chao-dust2.jpg")
 
         self.texturas_obstaculos = {
             1: "assets/texturas_obstaculos/bloco-dust2.png",
             2: "assets/texturas_obstaculos/bloco-mirage.png",
-            3: "assets/texturas_obstaculos/bloco-cache.png"
+            3: "assets/texturas_obstaculos/bloco-cache.png",
+            4: "assets/texturas_obstaculos/bloco-poolday.png"
         }
 
-        self.obs_path = self.texturas_obstaculos.get(self.mundo, None)
+        self.obs_path = self.texturas_obstaculos.get(mundo_loop, "assets/texturas_obstaculos/bloco-dust2.png")
 
         self.gerar_fase()
 

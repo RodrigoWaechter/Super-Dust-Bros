@@ -38,7 +38,7 @@ class GameEngine:
         # Controle de progressão
         self.mundo = 1
         self.fase = 1
-        self.fases_por_mundo = 3
+        self.fases_por_mundo = 1
 
         # Instanciação dinâmica das entidades baseadas no layout do mapa gerado
         self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
@@ -95,13 +95,18 @@ class GameEngine:
         Carrega a camada de fundo correspondente ao mundo atual.
         Utiliza o ParallaxLayer para criar ilusão de profundidade através de rolagem mais lenta.
         """
+
+        # mapeia mundos > 4 para o ciclo 1, 2 ou 3 (para futuros mapas)
+        mundo_mapeado = ((self.mundo - 1) % 4) + 1
+
         backgrounds = {
             1: "assets/background/dust.jpg",
             2: "assets/background/mirage.jpg",
             3: "assets/background/cache.jpg",
+            4: "assets/background/poolday.jpg"
         }
 
-        path = backgrounds.get(self.mundo, "assets/background/dust.jpg")
+        path = backgrounds.get(mundo_mapeado, "assets/background/dust.jpg")
         self.bg_layers = [ParallaxLayer(path, 0.1)]
 
     def process_input(self):
@@ -137,6 +142,9 @@ class GameEngine:
             self.player.direcao = 1
 
         if glfw.get_key(self.window, glfw.KEY_W) == glfw.PRESS:
+            self.player.jump()
+
+        if glfw.get_key(self.window, glfw.KEY_SPACE) == glfw.PRESS:
             self.player.jump()
 
         # Gatilho de disparo (Arma primária)
