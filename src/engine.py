@@ -369,7 +369,9 @@ class GameEngine:
                 for inimigo in self.inimigos[:]:
                     if abs(inimigo.centro_x - exp.centro_x) < (exp.largura / 2) + (inimigo.width / 2):
                         if abs(inimigo.centro_y - exp.centro_y) < (inimigo.height / 2) + 0.2:
-                            self.inimigos.remove(inimigo)
+                            # CORREÇÃO APLICADA AQUI
+                            if inimigo in self.inimigos:
+                                self.inimigos.remove(inimigo)
 
                 # NOVO: Dano no próprio jogador se pisar no fogo!
                 if abs(self.player.centro_x - exp.centro_x) < (exp.largura / 2) + (self.player.width / 2):
@@ -436,10 +438,11 @@ class GameEngine:
                         elif isinstance(proj, MolotovAtiva):
                             self.quebrar_molotov(proj)
 
-                        # Remove o inimigo atingido
-                        self.inimigos.remove(inimigo)
+                        # Remove o inimigo atingido - CORREÇÃO APLICADA AQUI
+                        if inimigo in self.inimigos:
+                            self.inimigos.remove(inimigo)
 
-                        # Remove o projétil da tela
+                        # Remove o projétil da tela - CORREÇÃO APLICADA AQUI
                         if proj in self.projeteis:
                             self.projeteis.remove(proj)
                         break
@@ -617,7 +620,9 @@ class GameEngine:
                     (inimigo.centro_x - granada.centro_x) ** 2 +
                     (inimigo.centro_y - granada.centro_y) ** 2
             ) <= granada.raio_explosao:
-                self.inimigos.remove(inimigo)
+                # CORREÇÃO APLICADA AQUI
+                if inimigo in self.inimigos:
+                    self.inimigos.remove(inimigo)
 
         # NOVO: Dano em área no próprio jogador!
         distancia_player = math.sqrt(
