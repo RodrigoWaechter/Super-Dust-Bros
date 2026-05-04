@@ -9,13 +9,14 @@ class Projetil(GameObject):
     Usado pelas armas do player e inimigo (AK-47 / AWP).
     """
 
-    def __init__(self, x, y, direcao, origem="player", speed=0.9):
+    def __init__(self, x, y, direcao, origem="player", speed=1.8):
         # A escala é sensivelmente ajustada visualmente em X/Y para o quad da munição
         super().__init__(x, y, 0.1, 0.05, (1.0, 1.0, 1.0))
         self.vel_x = speed * direcao
         self.direcao = direcao
         self.start_x = x
-        self.max_distance = 0.8
+        # Aumentamos o alcance máximo para o tiro rápido não sumir na metade do caminho
+        self.max_distance = 1.5
         self.destruir = False
         self.origem = origem
         self.texture = None
