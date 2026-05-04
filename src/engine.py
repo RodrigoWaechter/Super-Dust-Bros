@@ -38,7 +38,7 @@ class GameEngine:
         # Controle de progressão
         self.mundo = 1
         self.fase = 1
-        self.fases_por_mundo = 1
+        self.fases_por_mundo = 3
 
         # Instanciação dinâmica das entidades baseadas no layout do mapa gerado
         self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
