@@ -7,6 +7,7 @@ detecção de colisões, renderização e interação entre entidades.
 """
 
 import glfw
+import pygame
 from OpenGL.GL import *
 import math
 
@@ -20,6 +21,7 @@ from src.entities.inimigo import Inimigo
 from src.entities.inimigo_atirador import InimigoAtirador
 from src.utils import load_texture
 from src.renderer.parallax import ParallaxLayer
+from assets import sounds
 
 
 class GameEngine:
@@ -38,7 +40,7 @@ class GameEngine:
         # Controle de progressão
         self.mundo = 1
         self.fase = 1
-        self.fases_por_mundo = 3
+        self.fases_por_mundo = 1
 
         # Instanciação dinâmica das entidades baseadas no layout do mapa gerado
         self.mapa_atual = Mapa(self.mundo, self.fase, self.settings)
@@ -161,11 +163,23 @@ class GameEngine:
             1: "assets/background/dust.jpg",
             2: "assets/background/mirage.jpg",
             3: "assets/background/cache.jpg",
-            4: "assets/background/poolday.jpg"
+            4: "assets/background/poolday.png"
         }
 
         path = backgrounds.get(mundo_mapeado, "assets/background/dust.jpg")
         self.bg_layers = [ParallaxLayer(path, 0.1)]
+
+    def init_audio(self):
+        pygame.mixer.init() # inicia o mixer
+
+        try:
+            pygame.mixer.music.load("../assets/sounds/csgo_soundtrack.ogg")    # path do arquivo
+            pygame.mixer.music.set_volume(0.3)  # volume da música
+            pygame.mixer.music.play(-1) # mantém a música rodando em loop
+
+            print("Soundtrack carregada com sucesso!")
+        except Exception as e:
+            print(f"Erro ao carregar áudio: {e}")
 
     def process_input(self):
         """
@@ -615,6 +629,7 @@ class GameEngine:
     def run(self):
         """Ponto de entrada do loop infinito. Mantém o jogo vivo até que seja solicitada a saída."""
         self.init_window()
+        self.init_audio()
         self.load_backgrounds()
         self.player.load_sprites()
 
@@ -625,6 +640,7 @@ class GameEngine:
             self.render()
 
         glfw.terminate()
+        pygame.mixer.quit() # garante que o pygame pare de reproduzir a música quando a aplicação fecha
 
     def explodir_granada(self, granada):
         """
